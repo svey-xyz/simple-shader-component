@@ -13,7 +13,7 @@
 	},
 	"include": [
 		"src/index.tsx",
-		"types/**/*"
+		"types/index.d.ts"
 	],
 	"exclude": [
 		"node_modules",

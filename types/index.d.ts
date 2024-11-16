@@ -47,6 +47,4 @@ declare global {
 		| "mat4";
 }
 
-
-
 export { };
