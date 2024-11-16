@@ -17,12 +17,14 @@ export const ShaderContainer = ({
 	useEffect(() => {
 		if (!ref.current) return
 		const myClassInstance = new Shader(ref.current, args);
-
-		// if (myClassInstance.)
 	}, []);
 	
 	return (
-		<canvas ref={ref} className={`${className} w-full`} />
+		<canvas
+			ref={ref}
+			className={`${className}`}
+			style={{ width: '100%' }}
+		/>
 	)
 }
 
