@@ -2,9 +2,12 @@
   "name": "ShaderComponent",
   "version": "1.0.0",
   "private": false,
-  "scripts": {
-  },
+  "scripts": {},
   "dependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.0.1",
+    "babel-jest": "^29.7.0",
+    "jest": "^29.7.0"
   },
   "devDependencies": {
     "typescript": "^5.6.3"
