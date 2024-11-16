@@ -5,6 +5,7 @@
 		"emitDeclarationOnly": true,
 		"target": "ES6",
 		"module": "esnext",
+		"moduleResolution": "Bundler",
 		"strict": true,
 		"esModuleInterop": true,
 		"jsx": "react-jsx",
@@ -18,5 +19,10 @@
 	"exclude": [
 		"node_modules",
 		"dist"
-	]
+	],
+	"types": [
+		"node",
+		"jest",
+		"@testing-library/jest-dom"
+	],
 }
