@@ -22,7 +22,7 @@ export const ShaderContainer = ({
 	return (
 		<canvas
 			ref={ref}
-			className={`${className}`}
+			className={`${className} ${loadedClass}`}
 			style={{ width: '100%' }}
 		/>
 	)
