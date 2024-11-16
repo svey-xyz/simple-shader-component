@@ -1,8 +1,7 @@
 'use client'
 
-import { useRef, useEffect } from "react";
+import React, { useRef, useEffect } from "react";
 import { Shader } from "./shader";
-
 
 export const ShaderContainer = ({
 		args,
@@ -27,3 +26,4 @@ export const ShaderContainer = ({
 	)
 }
 
+export default ShaderContainer;
