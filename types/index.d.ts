@@ -1,3 +1,5 @@
+import { Shader } from "../src/shader"
+
 declare global {
 	enum LogicProcesses {
 		TOUCH = 'touch',
@@ -11,7 +13,7 @@ declare global {
 	}
 
 	type LogicFns = {
-		[key in LogicProcesses]?: ((shader: blobShader) => void);
+		[key in LogicProcesses]?: ((shader: Shader) => void);
 	}
 
 

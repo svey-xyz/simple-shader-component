@@ -1,4 +1,5 @@
 import { Utils } from './utils'
+
 export class domHandler {
 	private _container: HTMLCanvasElement;
 	private sectionSize: { width: number, height: number } = { width: 0, height: 0 };

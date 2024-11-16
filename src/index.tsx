@@ -3,7 +3,7 @@
 import React, { useRef, useEffect } from "react";
 import { Shader } from "./shader";
 
-export const ShaderContainer = ({
+export const ShaderComponent = ({
 		args,
 		className,
 		loadedClass = 'loaded'
@@ -27,5 +27,3 @@ export const ShaderContainer = ({
 		/>
 	)
 }
-
-export default ShaderContainer;

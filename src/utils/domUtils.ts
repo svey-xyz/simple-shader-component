@@ -1,7 +1,9 @@
-import { Utils } from ".";
+import { scriptUtils } from './scriptUtils'
 
 export class domUtils {
+	_ScriptUtils
 	constructor() {
+		this._ScriptUtils = new scriptUtils()
 	}
 
 	/**
@@ -46,8 +48,8 @@ export class domUtils {
 				window.cancelAnimationFrame(timeout);
 			}
 			// Setup the new requestAnimationFrame()
-			timeout = window.requestAnimationFrame(function () {
-				Utils.scriptUtils.requestTimeout(fn, delay);
+			timeout = window.requestAnimationFrame(() => {
+				this._ScriptUtils.requestTimeout(fn, delay);
 			});
 
 		}

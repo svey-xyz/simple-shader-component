@@ -3,12 +3,20 @@
 		"outDir": "dist",
 		"declaration": true,
 		"emitDeclarationOnly": true,
-		"target": "ES2020",
-		"module": "CommonJS",
+		"target": "ES6",
+		"module": "esnext",
 		"strict": true,
-		"esModuleInterop": true
+		"esModuleInterop": true,
+		"jsx": "react-jsx",
+		"sourceMap": true,
+		"allowJs": false,
 	},
 	"include": [
-		"src/**/*"
+		"src/index.tsx",
+		"types/**/*"
+	],
+	"exclude": [
+		"node_modules",
+		"dist"
 	]
 }

@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react';
-import ShaderComponent from '../src';
+import { ShaderComponent } from '../src';
 import React from 'react';
 
 describe('ShaderComponent', () => {
