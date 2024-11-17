@@ -6,7 +6,7 @@ import { domHandler } from "./base";
  * @extends {domHandler}
  * @param {LogicFns} logic 
  */
-export class SimpleShader extends domHandler {
+export class SimpleShaderCanvas extends domHandler {
 	private logic: LogicFns = {};
 	private gl: WebGLRenderingContext | null;
 	private shaderProgram: WebGLProgram;
@@ -39,7 +39,7 @@ export class SimpleShader extends domHandler {
 	// Initializes custom logic from provided args
 	private initializeLogic(logic: { [key in LogicProcesses]?: string }): void {
 		Object.entries(logic).forEach(([key, logicFunction]) => {
-			const logicFn = new Function(`return ${logicFunction}`)() as (shader: SimpleShader) => void;
+			const logicFn = new Function(`return ${logicFunction}`)() as (shader: SimpleShaderCanvas) => void;
 			this.logic[key as LogicProcesses] = logicFn;
 		});
 	}
