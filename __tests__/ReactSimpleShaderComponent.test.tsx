@@ -1,5 +1,7 @@
+import '@testing-library/jest-dom';
+
 import { render, screen } from '@testing-library/react';
-import { ShaderComponent } from '../src';
+import { SimpleShaderCanvas } from '../src/react';
 import React from 'react';
 import { setupJestCanvasMock } from 'jest-webgl-canvas-mock';
 
@@ -8,11 +10,11 @@ beforeEach(() => {
 	setupJestCanvasMock();
 });
 
-describe('ShaderComponent', () => {
+describe('ReactSimpleShaderComponent', () => {
 	const args = { /* mock shader args */ };
 
 	it('renders the canvas and initializes Shader', () => {
-		const screen = render(<ShaderComponent data-testid='canvas' args={args} />);
+		const screen = render(<SimpleShaderCanvas args={args} />);
 		const canvas = screen.container.querySelector('canvas')
 
 		expect(canvas).toBeInTheDocument();
@@ -20,7 +22,7 @@ describe('ShaderComponent', () => {
 	});
 
 	it('applies custom className and loadedClass', () => {
-		const screen = render(<ShaderComponent data-testid='canvas' args={args} className="test-class" loadedClass="custom-loaded" />);
+		const screen = render(<SimpleShaderCanvas args={args} className="test-class" loadedClass="custom-loaded" />);
 		const canvas = screen.container.querySelector('canvas')
 
 		expect(canvas).toHaveClass('test-class');

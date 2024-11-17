@@ -2,6 +2,7 @@
 	"compilerOptions": {
 		"outDir": "dist",
 		"declaration": true,
+		"declarationDir": "./dist",
 		"emitDeclarationOnly": true,
 		"target": "ES6",
 		"module": "esnext",
@@ -13,6 +14,7 @@
 		"allowJs": false,
 	},
 	"include": [
+		"src/core/index.ts",
 		"src/react/index.tsx",
 		"types/index.d.ts"
 	],
@@ -23,9 +25,11 @@
 	"types": [
 		"node",
 		"jest",
-		"@testing-library/jest-dom"
+		"@testing-library/jest-dom",
+		"@testing-library/jest-dom/jest-globals",
 	],
 	"paths": {
+		"@/src/*": ["./src/*"],
 		"simple-shader/core": [
 			"src/core/index.ts"
 		],
