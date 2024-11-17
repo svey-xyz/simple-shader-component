@@ -1,9 +1,9 @@
 'use client'
 
 import React, { useRef, useEffect } from "react";
-import { Shader } from "./shader";
+import { SimpleShader } from "../core";
 
-export const ShaderComponent = ({
+export const ReactSimpleShader = ({
 		args,
 		className,
 		loadedClass = 'loaded'
@@ -16,8 +16,12 @@ export const ShaderComponent = ({
 	const ref = useRef<HTMLCanvasElement>(null);
 	useEffect(() => {
 		if (!ref.current) return
-		const myClassInstance = new Shader(ref.current, args);
-	}, []);
+		
+		const ShaderInstance = new SimpleShader(ref.current, args);
+		ShaderInstance.init()
+
+		// return () => ShaderInstance. // TODO: ShaderInstance should be destroyed on return 
+	}, [args]);
 	
 	return (
 		<canvas

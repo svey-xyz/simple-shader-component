@@ -6,11 +6,12 @@ import { domHandler } from "./base";
  * @extends {domHandler}
  * @param {LogicFns} logic 
  */
-export class Shader extends domHandler {
+export class SimpleShader extends domHandler {
 	private logic: LogicFns = {};
 	private gl: WebGLRenderingContext | null;
 	private shaderProgram: WebGLProgram;
 	private vertexBuffer: WebGLBuffer;
+	private uniforms: Array<UniformValue> | undefined
 
 	constructor(container: HTMLCanvasElement, args: shaderArgs) {
 		super(container);
@@ -19,15 +20,18 @@ export class Shader extends domHandler {
 
 		this.shaderProgram = this.initializeShader(args.vertShader, args.fragShader);
 		this.vertexBuffer = this.initBuffers();
+		this.uniforms = args.uniforms
 
 		// Initialize custom logic if provided
 		if (args.logic) this.initializeLogic(args.logic);
+	}
 
+	public init() {
 		super.init();
 		this.resize()
 		this.startLoop(60);
 
-		args.uniforms?.forEach((uniform) => {
+		this.uniforms?.forEach((uniform) => {
 			this.setUniform(uniform)
 		})
 	}
@@ -35,7 +39,7 @@ export class Shader extends domHandler {
 	// Initializes custom logic from provided args
 	private initializeLogic(logic: { [key in LogicProcesses]?: string }): void {
 		Object.entries(logic).forEach(([key, logicFunction]) => {
-			const logicFn = new Function(`return ${logicFunction}`)() as (shader: Shader) => void;
+			const logicFn = new Function(`return ${logicFunction}`)() as (shader: SimpleShader) => void;
 			this.logic[key as LogicProcesses] = logicFn;
 		});
 	}

@@ -1,4 +1,4 @@
-import { Shader } from "../src/shader"
+import { SimpleShader } from "../src/core"
 
 declare global {
 	enum LogicProcesses {
@@ -13,7 +13,7 @@ declare global {
 	}
 
 	type LogicFns = {
-		[key in LogicProcesses]?: ((shader: Shader) => void);
+		[key in LogicProcesses]?: ((shader: SimpleShader) => void);
 	}
 
 

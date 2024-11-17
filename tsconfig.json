@@ -13,7 +13,7 @@
 		"allowJs": false,
 	},
 	"include": [
-		"src/index.tsx",
+		"src/react/index.tsx",
 		"types/index.d.ts"
 	],
 	"exclude": [
