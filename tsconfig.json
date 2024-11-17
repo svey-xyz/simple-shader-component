@@ -25,4 +25,15 @@
 		"jest",
 		"@testing-library/jest-dom"
 	],
+	"paths": {
+		"simple-shader/core": [
+			"src/core/index.ts"
+		],
+		"simple-shader/react": [
+			"src/react/index.ts"
+		],
+		// "simple-shader/vue": [
+		// 	"src/vue/index.ts"
+		// ]
+	}
 }
