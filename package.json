@@ -2,18 +2,18 @@
   "name": "SimpleShader",
   "version": "1.0.0",
   "type": "module",
-  "main": "dist/core/bundle.js",
-  "module": "dist/core/bundle.esm.js",
+  "main": "dist/core/index.js",
+  "module": "dist/core/index.esm.js",
   "types": "dist/core/index.d.ts",
 	"exports": {
 		".": {
-			"require": "./dist/core/bundle.js",
-			"import": "./dist/core/bundle.esm.js",
+			"require": "./dist/core/index.js",
+			"import": "./dist/core/index.esm.js",
 			"types": "./dist/core/index.d.ts"
 		},
 		"./react": {
-			"require": "./dist/react/bundle.js",
-			"import": "./dist/react/bundle.esm.js",
+			"require": "./dist/react/index.js",
+			"import": "./dist/react/index.esm.js",
 			"types": "./dist/react/index.d.ts"
 		}
 	},
