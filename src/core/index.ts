@@ -28,6 +28,8 @@ export class SimpleShaderCanvas extends domHandler {
 
 	public init() {
 		super.init();
+		this.logic.init?.(this);
+
 		this.resize()
 		this.startLoop(60);
 
