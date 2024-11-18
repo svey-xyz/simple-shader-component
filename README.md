@@ -6,4 +6,4 @@
 [![GNU license v3.0](https://img.shields.io/badge/License-GNU-green.svg)](https://github.com/svey-xyz/simple-shader-canvas/LICENSE)
 
 ## Description
-This library provides a simple to use webgl shader component. Shaders are powerful tools and can be used to add a lot of visual interest to your web project. However, setting-up many web shader tools can be complicated, this library provides a simple core package to make rendering a shader in your DOM incredibly easy. With included framework wrappers and strong typing.
+This library provides a simple to use webgl shader component, with included framework wrappers and strong typing. Shaders are powerful tools and can be used to add a lot of visual interest to your web project. However, setting-up many shader tools can be complicated and add a large bundle to your project, this library provides a simple core package to make rendering a shader in your DOM incredibly easy. 
