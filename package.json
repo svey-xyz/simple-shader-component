@@ -7,11 +7,11 @@
     "shader",
     "component"
   ],
-  "version": "1.0.3",
+  "version": "1.0.4",
   "main": "dist/core/index.js",
   "module": "dist/core/index.esm.js",
   "publishConfig": {
-    "registry": "https://registry.npmjs.org/svey-xyz/simple-shader-component"
+    "registry": "https://registry.npmjs.org"
   },
   "repository": {
     "type": "git",
