@@ -1,21 +1,9 @@
-import { SimpleShaderCanvas } from "../core"
+import { Shader } from "../core"
+import { MethodName } from "../core/base";
 
 declare namespace simpleShaderComponent {
-	enum LogicProcesses {
-		TOUCH = 'touch',
-		INIT = 'init',
-		LOOP = 'loop',
-	}
 
-	/** Logic should be functions passed as strings that take the form (shader: Shader) => void */
-	type LogicStrings = {
-		[key in LogicProcesses]?: string; // Note string is later converted to Fn
-	}
-
-	type LogicFns = {
-		[key in LogicProcesses]?: ((shader: SimpleShaderCanvas) => void);
-	}
-
+	type ShaderHook = (shader: Shader, ...args: any[]) => void;
 
 	/** 
 	 * @param logic Logic should be functions passed as strings that take the form (shader: Shader) => void
@@ -24,7 +12,7 @@ declare namespace simpleShaderComponent {
 		vertShader?: string,
 		fragShader?: string,
 		uniforms?: Array<UniformValue>,
-		logic?: LogicStrings
+		hooks?: Array<{ methodName: MethodName, hook: ShaderHook }>
 	}
 
 	type UniformValue = {

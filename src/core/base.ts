@@ -1,5 +1,14 @@
 import { Utils } from './utils'
 
+export const enum MethodName {
+	TOUCH,
+	INIT,
+	LOOP,
+	RENDER,
+	RESIZE,
+	INPUT
+}
+
 export class domHandler {
 	private _container: HTMLCanvasElement;
 	private sectionSize: { width: number, height: number } = { width: 0, height: 0 };
