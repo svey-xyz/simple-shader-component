@@ -1,10 +1,10 @@
-# Simple Shader Canvas
+# Simple Shader Component
 *by [svey](https://svey.xyz)*
 
-[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/svey-xyz/simple-shader-canvas?include_prereleases&sort=semver)](https://GitHub.com/svey-xyz/simple-shader-canvas/releases/)
-[![GitHub commits](https://badgen.net/github/commits/svey-xyz/simple-shader-canvas)](https://GitHub.com/svey-xyz/simple-shader-canvas/commit/)
-[![GNU license v3.0](https://img.shields.io/badge/License-GNU-green.svg)](https://github.com/svey-xyz/simple-shader-canvas/LICENSE)
-[![Bundle size](https://img.shields.io/bundlejs/size/simple-shader-canvas)](https://github.com/svey-xyz/simple-shader-canvas/LICENSE)
+[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/svey-xyz/simple-shader-component?include_prereleases&sort=semver)](https://GitHub.com/svey-xyz/simple-shader-component/releases/)
+[![GitHub commits](https://badgen.net/github/commits/svey-xyz/simple-shader-component)](https://GitHub.com/svey-xyz/simple-shader-component/commit/)
+[![GNU license v3.0](https://img.shields.io/badge/License-GNU-green.svg)](https://github.com/svey-xyz/simple-shader-component/LICENSE)
+[![Bundle size](https://img.shields.io/bundlejs/size/simple-shader-component)](https://github.com/svey-xyz/simple-shader-component/LICENSE)
 
 
 ## Description
