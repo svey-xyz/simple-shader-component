@@ -15,5 +15,8 @@ This library provides a simple to use webgl shader component, with included fram
 While libraries like [three.js](https://threejs.org/) are amazing, not every project requires the level of depth provided. This is a zero-dependency library that provides a simple to use component for rendering GLSL shaders on the web.
 
 ## Installation & Usage
+```zsh
+npm i simple-shader-component
+```
 *Coming soon*
 
