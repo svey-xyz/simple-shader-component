@@ -215,7 +215,5 @@ export class Shader extends domHandler {
 	protected touchStart(e: Event): void {
 		super.touchStart(e);
 		this.runHooks(MethodName.TOUCH);
-
-
 	}
 }
