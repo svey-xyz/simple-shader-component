@@ -1,32 +1,37 @@
 {
   "name": "simple-shader-component",
-	"author": "svey",
-	"description": "Zero dependency shader component",
-	"keywords": ["glsl", "shader", "component"],
+  "author": "svey",
+  "description": "Zero dependency shader component",
+  "keywords": [
+    "glsl",
+    "shader",
+    "component"
+  ],
   "version": "1.0.1",
   "main": "dist/core/index.js",
   "module": "dist/core/index.esm.js",
-	"publishConfig": {
-		"registry": "https://www.npmjs.com/package/simple-shader-component"
-	},
-	"repository": "https://github.com/svey-xyz/simple-shader-component",
-	"files": [
-		"dist/",
-		"README.md",
-		"LICENSE"
-	],
+  "publishConfig": {
+    "registry": "https://www.npmjs.com/package/simple-shader-component"
+  },
+  "repository": "https://github.com/svey-xyz/simple-shader-component",
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.0.1",
     "@types/jest": "^29.5.14",
     "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "jest-webgl-canvas-mock": "^2.5.3",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.6.3",
-    "tslib": "^2.8.1"
+    "tslib": "^2.8.1",
+    "typescript": "^5.6.3"
   },
   "peerDependencies": {
     "react": "^17.0.0 || ^18.0.0"
