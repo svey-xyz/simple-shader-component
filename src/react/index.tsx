@@ -2,6 +2,7 @@
 
 import React, { useRef, useEffect } from "react";
 import { SimpleShaderCanvas as SimpleShaderCore } from "../core";
+import { shaderArgs } from "../types";
 
 export const SimpleShaderCanvas = ({
 		args,

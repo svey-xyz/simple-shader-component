@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom';
 import { SimpleShaderCanvas } from '../src/core';
 import { setupJestCanvasMock } from 'jest-webgl-canvas-mock';
+import { UniformValue, shaderArgs } from '../src/types';
 
 beforeEach(() => {
 	jest.resetAllMocks();

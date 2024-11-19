@@ -1,6 +1,6 @@
-import { SimpleShaderCanvas } from "../src/core"
+import { SimpleShaderCanvas } from "../core"
 
-declare global {
+declare namespace simpleShaderComponent {
 	enum LogicProcesses {
 		TOUCH = 'touch',
 		INIT = 'init',
@@ -47,4 +47,5 @@ declare global {
 		| "mat4";
 }
 
-export { };
+export = simpleShaderComponent;
+export as namespace simpleShaderComponent;

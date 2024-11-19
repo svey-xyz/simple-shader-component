@@ -1,3 +1,4 @@
+import { LogicFns, UniformValue, shaderArgs, LogicProcesses } from "../types";
 import { domHandler } from "./base";
 
 /** Shader Class
