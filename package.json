@@ -1,5 +1,8 @@
 {
   "name": "simple-shader-canvas",
+	"author": "svey",
+	"description": "Zero dependency shader component",
+	"keywords": ["glsl", "shader", "component"],
   "version": "17.11.24",
   "main": "dist/core/index.js",
   "module": "dist/core/index.esm.js",
