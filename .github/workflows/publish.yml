@@ -19,10 +19,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --no-lockfile
 
       - name: Run tests
         run: npm run test
@@ -31,6 +30,7 @@ jobs:
         run: npm run build
 
       - name: Publish to npm
+        if: startsWith(github.ref, 'refs/tags/')
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --access public
