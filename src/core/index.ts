@@ -19,11 +19,12 @@ export class SimpleShaderCanvas extends domHandler {
 		if (!this.gl) throw new Error('No shader context!')
 
 		this.shaderProgram = this.initializeShader(args.vertShader, args.fragShader);
+
 		this.vertexBuffer = this.initBuffers();
 		this.uniforms = args.uniforms
 
 		// Initialize custom logic if provided
-		if (args.logic) this.initializeLogic(args.logic);
+		if (args.logic) this.initializeLogic(args.logic); 
 	}
 
 	public init() {
@@ -46,24 +47,6 @@ export class SimpleShaderCanvas extends domHandler {
 		});
 	}
 
-	private loadShader(gl: WebGLRenderingContext | null, type?: GLenum, source: string = ''): WebGLShader | null {
-		if (!gl || !type) return null;
-
-		const shader = gl.createShader(type);
-		if (!shader) return null;
-
-		gl.shaderSource(shader, source);
-		gl.compileShader(shader);
-
-		if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-			console.error('Shader compilation error:', gl.getShaderInfoLog(shader));
-			gl.deleteShader(shader);
-			return null;
-		}
-
-		return shader;
-	}
-
 	private initBuffers(): WebGLBuffer {
 		const vertices = new Float32Array([
 			-1.0, 1.0,  // Top-left
@@ -82,6 +65,24 @@ export class SimpleShaderCanvas extends domHandler {
 		this.gl?.bufferData(this.gl.ARRAY_BUFFER, vertices, this.gl.STATIC_DRAW);
 
 		return vertexBuffer;
+	}
+	
+	private loadShader(gl: WebGLRenderingContext | null, type?: GLenum, source: string = ''): WebGLShader | null {
+		if (!gl || !type) return null;
+
+		const shader = gl.createShader(type);
+		if (!shader) return null;
+
+		gl.shaderSource(shader, source);
+		gl.compileShader(shader);
+
+		if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+			console.error('Shader compilation error:', gl.getShaderInfoLog(shader));
+			gl.deleteShader(shader);
+			return null;
+		}
+
+		return shader;
 	}
 
 	private initializeShader(vertShader?: string, fragShader?: string): WebGLProgram {
@@ -126,7 +127,7 @@ export class SimpleShaderCanvas extends domHandler {
 	}
 
 	/**  Gets a uniform value from the shader */
-	public getUniform(name: string): UniformValue | undefined {
+	public getUniform(name: string) {
 		const uLoc = this.gl?.getUniformLocation(this.shaderProgram, name);
 		if (!uLoc) {
 			console.error(`Uniform ${name} not found.`);

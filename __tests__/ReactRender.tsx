@@ -1,8 +1,8 @@
 import '@testing-library/jest-dom';
 
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { SimpleShaderCanvas } from '../src/react';
-import React from 'react';
+// import React from 'react';
 import { setupJestCanvasMock } from 'jest-webgl-canvas-mock';
 
 beforeEach(() => {

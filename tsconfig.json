@@ -16,6 +16,7 @@
 	"include": [
 		"src/core/index.tsx",
 		"src/react/index.tsx",
+		"__tests__/**/*.tsx",
 		"types/index.d.ts"
 	],
 	"exclude": [
