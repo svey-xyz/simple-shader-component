@@ -1,5 +1,3 @@
-import { Utils } from './utils'
-
 export const enum MethodName {
 	TOUCH,
 	INIT,
@@ -39,7 +37,7 @@ export class domHandler {
 		this.container.addEventListener('touchmove', this.inputHandler, { passive: true });
 
 		this.resizeHandler = this.resize.bind(this);
-		window.addEventListener('resize', Utils.domUtils.debounce(this.resizeHandler), { passive: true });
+		window.addEventListener('resize', this.debounce(this.resizeHandler), { passive: true });
 
 		this.setSize();
 	}
@@ -87,7 +85,7 @@ export class domHandler {
 
 	protected mainLoop = (refreshRate: number = 0) => {
 		if (this.loopActive) {
-			Utils.scriptUtils.requestTimeout(() => this.mainLoop(refreshRate), refreshRate);
+			this.requestTimeout(() => this.mainLoop(refreshRate), refreshRate);
 			this.loop();
 		}
 	}
@@ -98,4 +96,80 @@ export class domHandler {
 	public get container(): HTMLCanvasElement {
 		return this._container;
 	}
+
+	/**
+	 * Returns id for touch from a list.
+	 * Returns -1 if not found.
+	 *
+	 * @param {number} idToFind
+	 * @param {Array<Touch>} ongoingTouches
+	 * @return {*}  {number}
+	 * @memberof domUtils
+	 */
+	protected ongoingTouchIndexById(idToFind: number, ongoingTouches: Array<Touch>): number {
+		for (var i = 0; i < ongoingTouches.length; i++) {
+			var id = ongoingTouches[i].identifier;
+
+			if (id == idToFind) {
+				return i;
+			}
+		}
+		return -1;    // not found
+	}
+
+	/**
+	 * Debounce functions for better performance
+	 * (c) 2018 Chris Ferdinandi, MIT License, https://gomakethings.com
+	 * @param  {Function} fn The function to debounce
+	 */
+	protected debounce(this: any, fn: any, delay: number = 0) {
+
+		// Setup a timer
+		let timeout: number;
+
+		// Return a function to run debounced
+		return () => {
+
+			// Setup the arguments
+			let context: any = this;
+			let args: any = arguments;
+
+			// If there's a timer, cancel it
+			if (timeout) {
+				window.cancelAnimationFrame(timeout);
+			}
+			// Setup the new requestAnimationFrame()
+			timeout = window.requestAnimationFrame(() => {
+				this._ScriptUtils.requestTimeout(fn, delay);
+			});
+
+		}
+	};
+
+	protected noop = () => { };
+
+	protected requestTimeout = (fn: () => void, delay: number, registerCancel: any = this.registerCancel) => {
+		const start = new Date().getTime();
+
+		const loop = () => {
+			const delta = new Date().getTime() - start;
+
+			if (delta >= delay) {
+				fn();
+				registerCancel(this.noop);
+				return;
+			}
+
+			const raf = requestAnimationFrame(loop);
+			registerCancel(() => cancelAnimationFrame(raf));
+		};
+
+		const raf = requestAnimationFrame(loop);
+		registerCancel(() => cancelAnimationFrame(raf));
+	};
+
+	protected cancel = this.noop;
+	protected registerCancel = (fn: () => void) => this.cancel = fn;
 }
+
+

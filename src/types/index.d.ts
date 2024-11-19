@@ -1,5 +1,5 @@
 import { Shader } from "../core"
-import { MethodName } from "../core/base";
+import { MethodName } from "../core/domHandler";
 
 declare namespace simpleShaderComponent {
 
