@@ -1,0 +1,10 @@
+__tests__/
+.devcontainer/
+.github/
+node_modules/
+src/
+types/
+.gitignore
+jest.config.ts
+jest.setup.ts
+tsconfig.json

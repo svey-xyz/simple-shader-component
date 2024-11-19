@@ -10,6 +10,11 @@
 		"registry": "https://www.npmjs.com/package/simple-shader-component"
 	},
 	"repository": "https://github.com/svey-xyz/simple-shader-component",
+	"files": [
+		"dist/",
+		"README.md",
+		"LICENSE"
+	],
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.0.1",
