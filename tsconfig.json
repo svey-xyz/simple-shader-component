@@ -1,6 +1,6 @@
 {
 	"compilerOptions": {
-		"outDir": "dist/types",
+		"outDir": "dist",
 		"emitDeclarationOnly": true,
 		"declaration": true,
 		"target": "esnext",

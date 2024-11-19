@@ -39,19 +39,17 @@
   "exports": {
     ".": {
       "require": "./dist/cjs/core/index.js",
-      "import": "./dist/esm/core/index.js",
-      "types": "./dist/types/index.d.ts"
+      "import": "./dist/esm/core/index.js"
     },
     "./react": {
       "require": "./dist/cjs/react/index.js",
-      "import": "./dist/esm/react/index.js",
-      "types": "./dist/types/index.d.ts"
+      "import": "./dist/esm/react/index.js"
     }
   },
   "scripts": {
 		"build:library": "bun ./build.ts",
 		"build:types": "bunx tsc",
-    "build": "bun build:library && bun build:types && cp -R ./src/types/* ./dist/types"
+    "build": "bun build:library && bun build:types && cp -R ./src/types ./dist/types"
   },
   "type": "module",
   "types": "dist/core/index.d.ts"
