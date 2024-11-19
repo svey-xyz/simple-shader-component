@@ -38,19 +38,20 @@
   },
   "exports": {
     ".": {
-      "require": "./dist/core/index.js",
-      "import": "./dist/core/index.esm.js",
-      "types": "./dist/core/index.d.ts"
+      "require": "./dist/cjs/core/index.js",
+      "import": "./dist/esm/core/index.js",
+      "types": "./dist/types/index.d.ts"
     },
     "./react": {
-      "require": "./dist/react/index.js",
-      "import": "./dist/react/index.esm.js",
-      "types": "./dist/react/index.d.ts"
+      "require": "./dist/cjs/react/index.js",
+      "import": "./dist/esm/react/index.js",
+      "types": "./dist/types/index.d.ts"
     }
   },
   "scripts": {
-    "test": "jest",
-    "build": "tsc"
+		"build:library": "bun ./build.ts",
+		"build:types": "bunx tsc",
+    "build": "bun build:library && bun build:types && cp -R ./src/types/* ./dist/types"
   },
   "type": "module",
   "types": "dist/core/index.d.ts"

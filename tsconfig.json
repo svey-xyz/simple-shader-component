@@ -1,11 +1,9 @@
 {
 	"compilerOptions": {
-		"outDir": "dist",
-		"rootDir": "src",
+		"outDir": "dist/types",
+		"emitDeclarationOnly": true,
 		"declaration": true,
-		"declarationDir": "dist",
-		"emitDeclarationOnly": false,
-		"target": "ES6",
+		"target": "esnext",
 		"module": "esnext",
 		"moduleResolution": "Bundler",
 		"strict": true,
@@ -13,34 +11,9 @@
 		"jsx": "react-jsx",
 		"sourceMap": true,
 		"allowJs": false,
+		"skipLibCheck": true
 	},
-	"include": [
-		"src/core/index.tsx",
-		"src/react/index.tsx",
-		"src/types/index.d.ts",
-		"__tests__/**/*.tsx"
-	],
-	"exclude": [
-		"node_modules",
-		"dist",
-		"__tests__"
-	],
-	"types": [
-		"node",
-		"jest",
-		"@testing-library/jest-dom",
-		"@testing-library/jest-dom/jest-globals"
-	],
-	"paths": {
-		"@/src/*": ["./src/*"],
-		"simple-shader/core": [
-			"src/core/index.ts"
-		],
-		"simple-shader/react": [
-			"src/react/index.ts"
-		],
-		// "simple-shader/vue": [
-		// 	"src/vue/index.ts"
-		// ]
-	}
+	"include": [ "src/**/*" ],
+	"exclude": [ "node_modules", "dist" ],
+	"types": [ "node" ]
 }
