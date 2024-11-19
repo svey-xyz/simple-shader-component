@@ -17,16 +17,17 @@
     "type": "git",
     "url": "git+https://github.com/svey-xyz/simple-shader-component.git"
   },
-	"bugs": {
-		"url": "https://github.com/svey-xyz/simple-shader-component/issues"
-	},
-	"homepage": "https://github.com/svey-xyz/simple-shader-component#readme",
+  "bugs": {
+    "url": "https://github.com/svey-xyz/simple-shader-component/issues"
+  },
+  "homepage": "https://github.com/svey-xyz/simple-shader-component#readme",
   "files": [
     "dist/",
     "README.md",
     "LICENSE"
   ],
   "devDependencies": {
+    "@happy-dom/global-registrator": "^15.11.6",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.0.1",
     "@types/jest": "^29.5.14",
@@ -60,5 +61,8 @@
     "build": "tsc"
   },
   "type": "module",
-  "types": "dist/core/index.d.ts"
+  "types": "dist/core/index.d.ts",
+  "dependencies": {
+    "bun": "^1.1.34"
+  }
 }

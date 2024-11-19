@@ -1,12 +1,13 @@
-import '@testing-library/jest-dom';
+// import '@testing-library/jest-dom';
 import { SimpleShaderCanvas } from '../src/core';
-import { setupJestCanvasMock } from 'jest-webgl-canvas-mock';
+// import { setupJestCanvasMock } from 'jest-webgl-canvas-mock';
 import { UniformValue, shaderArgs } from '../src/types';
+import { describe, expect, test, beforeAll } from "bun:test";
 
-beforeEach(() => {
-	jest.resetAllMocks();
-	setupJestCanvasMock();
-});
+// beforeEach(() => {
+// 	// jest.resetAllMocks();
+// 	// setupJestCanvasMock();
+// });
 
 describe('CoreShader', () => {
 	const args = { /* mock shader args */ };
@@ -14,7 +15,7 @@ describe('CoreShader', () => {
 	canvas.width = 800
 	canvas.height = 400
 
-	it('initializes Shader', () => {
+	test('initializes Shader', () => {
 		const shader = new SimpleShaderCanvas(canvas, args)
 		shader.init()
 
@@ -22,7 +23,7 @@ describe('CoreShader', () => {
 		expect(shader.getElapsedTime()).toBeGreaterThan(0);
 	});
 
-	it('runs custom logic', () => {
+	test('runs custom logic', () => {
 		const initLogic = (shader: SimpleShaderCanvas) => {
 			throw new Error("Throw to test custom logic has run")
 		}
@@ -38,7 +39,7 @@ describe('CoreShader', () => {
 		expect(() => { shader.init() }).toThrow("Throw to test custom logic has run")
 	});
 
-	it('uniforms are set properly', () => {
+	test('uniforms are set properly', () => {
 		const testVertShader = 'attribute vec2 a_position; void main() { gl_Position = vec4(a_position, 0.0, 1.0); }'
 		const testFragShader = 'precision mediump float; uniform float u_test; void main() { gl_FragColor = vec4(u_test, 0.0, 0.0, 0.0); }'
 
