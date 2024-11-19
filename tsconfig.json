@@ -1,6 +1,7 @@
 {
 	"compilerOptions": {
 		"outDir": "dist",
+		"rootDir": "src",
 		"declaration": true,
 		"declarationDir": "dist",
 		"emitDeclarationOnly": false,
@@ -21,7 +22,8 @@
 	],
 	"exclude": [
 		"node_modules",
-		"dist"
+		"dist",
+		"__tests__"
 	],
 	"types": [
 		"node",
