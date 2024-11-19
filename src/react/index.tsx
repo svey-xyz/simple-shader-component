@@ -1,29 +1,26 @@
 'use client'
 
-import React, { useRef, useEffect, useState } from "react";
-import { Shader as SimpleShaderCore } from "../core";
-import { shaderArgs } from "../types";
+import { useRef, useEffect } from "react";
+import { Shader } from "../core";
+import { ShaderArgs } from "../types";
 
 export const SimpleShaderCanvas = ({
 	args,
 	className,
 	loadedClass = 'loaded'
 }: {
-	args: shaderArgs,
+	args: ShaderArgs,
 	className?: string,
 	loadedClass?: string
 }) => {
 
 	const ref = useRef<HTMLCanvasElement>(null);
 
-
 	useEffect(() => {
-
 		if (!ref.current) return
 
-		const ShaderInstance = new SimpleShaderCore(ref.current, args);
+		const ShaderInstance = new Shader(ref.current, args);
 		ShaderInstance.init()
-
 
 		// return () => ShaderInstance. // TODO: ShaderInstance should be destroyed on return 
 	}, [args]);

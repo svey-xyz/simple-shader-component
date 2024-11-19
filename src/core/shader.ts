@@ -1,4 +1,4 @@
-import { shaderArgs, UniformValue, ShaderHook } from "../types";
+import { ShaderArgs, UniformValue, ShaderHook } from "../types";
 import { domHandler, MethodName } from "./domHandler";
 
 
@@ -15,7 +15,7 @@ export class Shader extends domHandler {
 	private vertexBuffer: WebGLBuffer;
 	private uniforms: Array<UniformValue> | undefined
 
-	constructor(container: HTMLCanvasElement, args: shaderArgs) {
+	constructor(container: HTMLCanvasElement, args: ShaderArgs) {
 		super(container);
 		this.gl = container.getContext('webgl') as WebGLRenderingContext;
 		this.shaderProgram = this.initializeShader(args.vertShader, args.fragShader);

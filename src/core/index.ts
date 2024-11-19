@@ -1,5 +1,5 @@
 import { Shader } from './shader'
-import { domHandler, MethodName } from './domHandler'
+import { MethodName } from './domHandler'
 
 
-export { Shader, domHandler, MethodName }
+export { Shader, MethodName }

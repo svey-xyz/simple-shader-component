@@ -8,7 +8,7 @@ declare namespace simpleShaderComponent {
 	/** 
 	 * @param logic Logic should be functions passed as strings that take the form (shader: Shader) => void
 	 * */
-	type shaderArgs = {
+	type ShaderArgs = {
 		vertShader?: string,
 		fragShader?: string,
 		uniforms?: Array<UniformValue>,
