@@ -13,6 +13,8 @@ declare namespace simpleShaderComponent {
 		fragShader?: string,
 		uniforms?: Array<UniformValue>,
 		hooks?: Array<{ methodName: MethodName, hook: ShaderHook }>
+		/** Default 'loaded' */
+		loadedClass?: string
 	}
 
 	type UniformValue = {

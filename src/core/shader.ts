@@ -14,15 +14,17 @@ export class Shader extends domHandler {
 	private shaderProgram: WebGLProgram;
 	private vertexBuffer: WebGLBuffer;
 	private uniforms: Array<UniformValue> | undefined
+	private loadedClass: string = 'loaded'
 
 	constructor(container: HTMLCanvasElement, args: ShaderArgs) {
 		super(container);
 		this.gl = container.getContext('webgl') as WebGLRenderingContext;
 		this.shaderProgram = this.initializeShader(args.vertShader, args.fragShader);
 		this.vertexBuffer = this.initBuffers();
-		this.uniforms = args.uniforms
-		// Initialize custom logic if provided
-		args.hooks?.forEach((hook) => {
+
+		if (args.uniforms) this.uniforms = args.uniforms
+		if (args.loadedClass) this.loadedClass = args.loadedClass
+		if (args.hooks) args.hooks.forEach((hook) => {
 			this.addHook(hook.methodName, hook.hook)
 		})
 	}
@@ -37,6 +39,7 @@ export class Shader extends domHandler {
 		this.uniforms?.forEach((uniform) => {
 			this.setUniform(uniform)
 		})
+		this.container.classList.add(this.loadedClass)
 	}
 
 	public addHook(methodName: MethodName, hook: ShaderHook): void {

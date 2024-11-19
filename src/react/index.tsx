@@ -6,12 +6,10 @@ import { ShaderArgs } from "../types";
 
 export const SimpleShaderCanvas = ({
 	args,
-	className,
-	loadedClass = 'loaded'
+	className
 }: {
 	args: ShaderArgs,
-	className?: string,
-	loadedClass?: string
+	className?: string
 }) => {
 
 	const ref = useRef<HTMLCanvasElement>(null);
@@ -28,7 +26,7 @@ export const SimpleShaderCanvas = ({
 	return (
 		<canvas
 			ref={ref}
-			className={`${className} ${loadedClass}`}
+			className={`${className}`}
 			style={{ width: '100%' }}
 		/>
 	)
