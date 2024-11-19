@@ -7,7 +7,7 @@
     "shader",
     "component"
   ],
-  "version": "1.0.4",
+  "version": "1.0.6",
   "main": "dist/core/index.js",
   "module": "dist/core/index.esm.js",
   "publishConfig": {
