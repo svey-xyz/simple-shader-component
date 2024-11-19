@@ -38,12 +38,14 @@
   },
   "exports": {
     ".": {
-      "require": "./dist/cjs/core/index.js",
-      "import": "./dist/esm/core/index.js"
+      "require": "./dist/core/index.js",
+      "import": "./dist/core/index.js",
+			"types": "./dist/core/index.d.ts"
     },
     "./react": {
-      "require": "./dist/cjs/react/index.js",
-      "import": "./dist/esm/react/index.js"
+      "require": "./dist/react/index.js",
+      "import": "./dist/react/index.js",
+			"types": "./dist/react/index.d.ts"
     }
   },
   "scripts": {
@@ -52,5 +54,5 @@
     "build": "bun build:library && bun build:types && cp -R ./src/types ./dist/types"
   },
   "type": "module",
-  "types": "dist/core/index.d.ts"
+  "types": "dist/types/index.d.ts"
 }
