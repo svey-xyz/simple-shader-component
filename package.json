@@ -7,7 +7,7 @@
     "shader",
     "component"
   ],
-  "version": "1.0.5",
+  "version": "1.0.0",
   "main": "dist/core/index.js",
   "module": "dist/core/index.esm.js",
   "publishConfig": {
@@ -27,6 +27,7 @@
     "LICENSE"
   ],
   "devDependencies": {
+    "@types/bun": "^1.1.13",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "ts-node": "^10.9.2",
@@ -40,18 +41,19 @@
     ".": {
       "require": "./dist/core/index.js",
       "import": "./dist/core/index.js",
-			"types": "./dist/core/index.d.ts"
+      "types": "./dist/core/index.d.ts"
     },
     "./react": {
       "require": "./dist/react/index.js",
       "import": "./dist/react/index.js",
-			"types": "./dist/react/index.d.ts"
+      "types": "./dist/react/index.d.ts"
     }
   },
   "scripts": {
-		"build:library": "bun ./build.ts",
-		"build:types": "bunx tsc",
-    "build": "bun build:library && bun build:types && cp -R ./src/types ./dist/types"
+		"clean": "rm -rf dist",
+    "build:library": "bun ./build.ts",
+    "build:types": "bunx tsc",
+    "build": "bun run clean && bun build:library && bun build:types && cp -R ./src/types ./dist/types"
   },
   "type": "module",
   "types": "dist/types/index.d.ts"

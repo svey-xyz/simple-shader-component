@@ -24,7 +24,7 @@ jobs:
         uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
-        run: npm install --no-lockfile
+        run: bun i
 
       - name: Build the project
         run: bun run build
