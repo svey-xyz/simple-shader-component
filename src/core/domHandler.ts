@@ -1,4 +1,4 @@
-export const enum MethodName {
+export enum MethodName {
 	TOUCH,
 	INIT,
 	LOOP,
