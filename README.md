@@ -29,6 +29,21 @@ import { SimpleShaderCanvas } from 'simple-shader-component/react'
 ```
 ***Note**: Right now only the React wrapper is included. If there's interest, or if my workflow requires it, I will add additional wrappers.*
 
+### Hooks
+Hooks can be added to any of the class methods, to add a hook you can pass it on construction or using the exposed add hook method.
+
+```tsx
+import { Shader, MethodName } from 'simple-shader-component' // import types from base package
+
+const hook = {
+	methodName: MethodName.RENDER,
+	hook: (shader: Shader) => void
+}
+
+Shader.addHook(hook) // use addHook method
+<SimpleShaderCanvas args={{ hooks:[hook] }} /> // or pass on init
+```
+
 ### Basic Usage
 'use client' directive is required to set hooks. If you're not using hooks it can be done in a server component.
 
