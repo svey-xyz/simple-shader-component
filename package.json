@@ -1,5 +1,5 @@
 {
-  "name": "simple-shader-component",
+  "name": "@svey-xyz/simple-shader-component",
   "author": "svey",
   "description": "Zero dependency shader component",
   "keywords": [
