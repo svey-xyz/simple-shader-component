@@ -41,7 +41,7 @@ const hook = {
 }
 
 Shader.addHook(hook) // use addHook method
-<SimpleShaderCanvas args={{ hooks:[hook] }} /> // or pass on init
+<SimpleShaderCanvas args={{ hooks:[hook] }} /> // or pass on construction
 ```
 
 ### Basic Usage

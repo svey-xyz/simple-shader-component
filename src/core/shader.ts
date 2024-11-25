@@ -1,6 +1,6 @@
-import { ShaderArgs, UniformValue, ShaderHook } from "../types";
+// import { ShaderArgs, UniformValue, ShaderHook } from "../types";
 import { domHandler, MethodName } from "./domHandler";
-
+import ShaderTypes from "../types"
 
 /** Shader Class
  * @export
@@ -9,14 +9,14 @@ import { domHandler, MethodName } from "./domHandler";
  *
  */
 export class Shader extends domHandler {
-	private hooks: Record<string, ShaderHook[]> = {};
+	private hooks: Record<string, ShaderTypes.ShaderHook[]> = {};
 	private gl: WebGLRenderingContext;
 	private shaderProgram: WebGLProgram;
 	private vertexBuffer: WebGLBuffer;
-	private uniforms: Array<UniformValue> | undefined
+	private uniforms: Array<ShaderTypes.UniformValue> | undefined
 	private loadedClass: string = 'loaded'
 
-	constructor(container: HTMLCanvasElement, args: ShaderArgs) {
+	constructor(container: HTMLCanvasElement, args: ShaderTypes.ShaderArgs) {
 		super(container);
 		this.gl = container.getContext('webgl') as WebGLRenderingContext;
 		this.shaderProgram = this.initializeShader(args.vertShader, args.fragShader);
@@ -42,7 +42,7 @@ export class Shader extends domHandler {
 		this.container.classList.add(this.loadedClass)
 	}
 
-	public addHook(methodName: MethodName, hook: ShaderHook): void {
+	public addHook(methodName: MethodName, hook: ShaderTypes.ShaderHook): void {
 		if (!this.hooks[methodName]) this.hooks[methodName] = [];
 		this.hooks[methodName].push(hook);
 	}
@@ -133,7 +133,7 @@ export class Shader extends domHandler {
 	}
 
 	/**  Gets a uniform value from the shader */
-	public getUniform(name: string): UniformValue | undefined {
+	public getUniform(name: string): ShaderTypes.UniformValue | undefined {
 		const uLoc = this.gl.getUniformLocation(this.shaderProgram, name);
 		if (!uLoc) {
 			console.error(`Uniform ${name} not found.`);
@@ -144,7 +144,7 @@ export class Shader extends domHandler {
 	}
 
 	/**  Sets a uniform value for the shader */
-	public setUniform(uniform: UniformValue): void {
+	public setUniform(uniform: ShaderTypes.UniformValue): void {
 		const { name, type, value } = uniform
 		const uLoc = this.gl.getUniformLocation(this.shaderProgram, name);
 
