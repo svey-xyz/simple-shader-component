@@ -11,7 +11,7 @@ This library provides a simple to use webgl shader component, with included fram
 
 ## Core Concepts
 ### Why
-While libraries like [three.js](https://threejs.org/) are amazing, not every project requires the level of depth provided. This is a zero-dependency library that provides a simple to use component for rendering GLSL shaders on the web.
+While libraries like [three.js](https://threejs.org/) are amazing, not every project requires all the provided features. That's where simple-shader-component comes in; this is a zero-dependency library that provides a simple to use component for rendering GLSL shaders on the web.
 
 ## Installation & Usage
 ```zsh
@@ -19,10 +19,6 @@ bun i simple-shader-component
 ```
 
 The base class and types are all exported from the root of the package.
-```ts
-import { Shader } from 'simple-shader-component'
-```
-
 Framework wrappers are available under sub exports.
 ```ts
 import { SimpleShaderCanvas } from 'simple-shader-component/react'
@@ -87,4 +83,7 @@ export const Test = () => {
 }
 ```
 
-*More coming soon*
+*Coming Soon*
+- improved documentation
+- screenshots & examples of how shaders as a component can be used to add visual interest
+- roadmap
