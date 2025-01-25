@@ -1,4 +1,5 @@
-import { Shader } from './shader'
+export { Shader } from './shader'
+export { domHandler } from './domHandler'
+export { MethodName } from './domHandler'
 
-export { Shader }
 export * from '../types/index.d'
