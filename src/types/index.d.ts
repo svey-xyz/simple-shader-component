@@ -7,16 +7,18 @@ export type MethodName = _MethodName;
 
 export type ShaderHook = (shader: Shader, ...args: any[]) => void;
 
-/** 
+/**
  * @param logic Logic should be functions passed as strings that take the form (shader: Shader) => void
  * */
 export type ShaderArgs = {
 	vertShader?: string,
 	fragShader?: string,
 	uniforms?: Array<UniformValue>,
-	hooks?: Array<{ methodName: MethodName, hook: ShaderHook }>
+	hooks?: Array<{ methodName: MethodName, hook: ShaderHook }>,
 	/** Default 'loaded' */
-	loadedClass?: string
+	loadedClass?: string,
+	/** Start the render loop automatically inside init(). Default true. */
+	autoStart?: boolean
 }
 
 export type UniformValue = {
@@ -37,4 +39,3 @@ export type UniformType =
 	| "mat2"
 	| "mat3"
 	| "mat4";
-

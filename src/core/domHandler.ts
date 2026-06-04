@@ -8,14 +8,22 @@ export enum MethodName {
 }
 
 export class domHandler {
+	private static readonly canvasEvents = [
+		'click', 'mousedown', 'mouseup', 'mouseleave', 'mouseenter',
+		'mousemove', 'touchstart', 'touchend', 'touchmove'
+	] as const;
+
 	private _container: HTMLCanvasElement;
 	private sectionSize: { width: number, height: number } = { width: 0, height: 0 };
 	private loopActive: boolean = false;
+	private destroyed: boolean = false;
+	private refreshRate: number = 0;
 	private timer: any;
 	private touch: boolean = false;
 	private ongoingTouches: Array<Touch> = [];
 	private inputHandler: (e: Event) => void;
 	private resizeHandler: (e: Event) => void;
+	private debouncedResize: (e: Event) => void;
 
 	// Clock properties
 	private startTime: number = 0; // Time when the clock starts
@@ -26,20 +34,26 @@ export class domHandler {
 
 		// initialize listeners
 		this.inputHandler = this.handleInput.bind(this);
-		this.container.addEventListener('click', this.inputHandler, { passive: true });
-		this.container.addEventListener('mousedown', this.inputHandler, { passive: true });
-		this.container.addEventListener('mouseup', this.inputHandler, { passive: true });
-		this.container.addEventListener('mouseleave', this.inputHandler, { passive: true });
-		this.container.addEventListener('mouseenter', this.inputHandler, { passive: true });
-		this.container.addEventListener('mousemove', this.inputHandler, { passive: true });
-		this.container.addEventListener('touchstart', this.inputHandler, { passive: true });
-		this.container.addEventListener('touchend', this.inputHandler, { passive: true });
-		this.container.addEventListener('touchmove', this.inputHandler, { passive: true });
-
 		this.resizeHandler = this.resize.bind(this);
-		window.addEventListener('resize', this.debounce(this.resizeHandler), { passive: true });
+		// Keep the debounced reference so it can be removed in destroy().
+		this.debouncedResize = this.debounce(this.resizeHandler);
+		this.addListeners();
 
 		this.setSize();
+	}
+
+	private addListeners(): void {
+		for (const event of domHandler.canvasEvents) {
+			this.container.addEventListener(event, this.inputHandler, { passive: true });
+		}
+		window.addEventListener('resize', this.debouncedResize, { passive: true });
+	}
+
+	private removeListeners(): void {
+		for (const event of domHandler.canvasEvents) {
+			this.container.removeEventListener(event, this.inputHandler);
+		}
+		window.removeEventListener('resize', this.debouncedResize);
 	}
 
 	// Start the clock
@@ -78,16 +92,47 @@ export class domHandler {
 		this.sectionSize.width = document.documentElement.clientWidth || document.body.clientWidth;
 	}
 
-	protected startLoop = (refreshRate: number = 0) => {
+	/** Subclass cleanup hook. Invoked by destroy() after the loop + listeners are torn down. */
+	protected onDestroy(): void { }
+
+	protected get isDestroyed(): boolean {
+		return this.destroyed;
+	}
+
+	public startLoop = (refreshRate?: number): void => {
+		if (this.destroyed || this.loopActive) return;
+		if (typeof refreshRate === 'number') this.refreshRate = refreshRate;
 		this.loopActive = true;
-		this.mainLoop(refreshRate);
+		this.mainLoop(this.refreshRate);
+	}
+
+	public stopLoop = (): void => {
+		this.loopActive = false;
+		this.cancel();
 	}
 
 	protected mainLoop = (refreshRate: number = 0) => {
-		if (this.loopActive) {
-			this.requestTimeout(() => this.mainLoop(refreshRate), refreshRate);
-			this.loop();
+		if (!this.loopActive || this.destroyed) return;
+		this.requestTimeout(() => this.mainLoop(refreshRate), refreshRate);
+		this.loop();
+	}
+
+	/**
+	 * Tear down the instance: stop the render loop, cancel pending frames and
+	 * remove every window/canvas listener registered in the constructor.
+	 * Idempotent — safe to call more than once.
+	 */
+	public destroy = (): void => {
+		if (this.destroyed) return;
+		this.destroyed = true;
+		this.stopLoop();
+		if (this.timer) {
+			clearInterval(this.timer);
+			this.timer = undefined;
 		}
+		this.removeListeners();
+		this.cancel();
+		this.onDestroy();
 	}
 
 	protected loop(): void {
@@ -100,11 +145,6 @@ export class domHandler {
 	/**
 	 * Returns id for touch from a list.
 	 * Returns -1 if not found.
-	 *
-	 * @param {number} idToFind
-	 * @param {Array<Touch>} ongoingTouches
-	 * @return {*}  {number}
-	 * @memberof domUtils
 	 */
 	protected ongoingTouchIndexById(idToFind: number, ongoingTouches: Array<Touch>): number {
 		for (var i = 0; i < ongoingTouches.length; i++) {
@@ -130,17 +170,13 @@ export class domHandler {
 		// Return a function to run debounced
 		return () => {
 
-			// Setup the arguments
-			let context: any = this;
-			let args: any = arguments;
-
 			// If there's a timer, cancel it
 			if (timeout) {
 				window.cancelAnimationFrame(timeout);
 			}
 			// Setup the new requestAnimationFrame()
 			timeout = window.requestAnimationFrame(() => {
-				this._ScriptUtils.requestTimeout(fn, delay);
+				this.requestTimeout(fn, delay);
 			});
 
 		}
@@ -171,5 +207,3 @@ export class domHandler {
 	protected cancel = this.noop;
 	protected registerCancel = (fn: () => void) => this.cancel = fn;
 }
-
-
