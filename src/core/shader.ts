@@ -1,4 +1,3 @@
-// import { ShaderArgs, UniformValue, ShaderHook } from "../types";
 import { domHandler, MethodName } from "./domHandler";
 import ShaderTypes from "../types"
 
@@ -15,6 +14,7 @@ export class Shader extends domHandler {
 	private vertexBuffer: WebGLBuffer;
 	private uniforms: Array<ShaderTypes.UniformValue> | undefined
 	private loadedClass: string = 'loaded'
+	private autoStart: boolean = true
 
 	constructor(container: HTMLCanvasElement, args: ShaderTypes.ShaderArgs) {
 		super(container);
@@ -24,6 +24,7 @@ export class Shader extends domHandler {
 
 		if (args.uniforms) this.uniforms = args.uniforms
 		if (args.loadedClass) this.loadedClass = args.loadedClass
+		if (args.autoStart === false) this.autoStart = false
 		if (args.hooks) args.hooks.forEach((hook) => {
 			this.addHook(hook.methodName, hook.hook)
 		})
@@ -33,12 +34,16 @@ export class Shader extends domHandler {
 		super.init();
 		this.runHooks(MethodName.INIT);
 
-		this.resize()
-		this.startLoop(60);
-
+		// Apply initial uniforms before the first paint so that a paused /
+		// reduced-motion canvas still renders a correct static frame.
 		this.uniforms?.forEach((uniform) => {
 			this.setUniform(uniform)
 		})
+
+		this.resize()
+
+		if (this.autoStart) this.startLoop(60);
+
 		this.container.classList.add(this.loadedClass)
 	}
 
@@ -110,12 +115,14 @@ export class Shader extends domHandler {
 
 	// Main render loop
 	protected loop(): void {
+		if (this.isDestroyed) return;
 		super.loop();
 		this.runHooks(MethodName.LOOP);
 		this.render();
 	}
 
 	protected render(): void {
+		if (this.isDestroyed) return;
 		const gl = this.gl;
 		this.runHooks(MethodName.RENDER);
 
@@ -194,6 +201,7 @@ export class Shader extends domHandler {
 
 	// Resize handler
 	protected resize(e?: Event): void {
+		if (this.isDestroyed) return;
 		super.resize(e);
 		const { width, height } = this.container.getBoundingClientRect();
 		this.container.width = width;
@@ -206,6 +214,7 @@ export class Shader extends domHandler {
 
 	// Handles input events
 	protected handleInput(e: Event): void {
+		if (this.isDestroyed) return;
 		super.handleInput(e);
 		this.runHooks(MethodName.INPUT);
 
@@ -215,5 +224,19 @@ export class Shader extends domHandler {
 	protected touchStart(e: Event): void {
 		super.touchStart(e);
 		this.runHooks(MethodName.TOUCH);
+	}
+
+	// Release GL resources when the instance is destroyed.
+	protected onDestroy(): void {
+		const gl = this.gl;
+		try {
+			gl.useProgram(null);
+			gl.bindBuffer(gl.ARRAY_BUFFER, null);
+			gl.deleteProgram(this.shaderProgram);
+			gl.deleteBuffer(this.vertexBuffer);
+			gl.getExtension('WEBGL_lose_context')?.loseContext();
+		} catch {
+			// Context may already be lost; nothing else to clean up.
+		}
 	}
 }
