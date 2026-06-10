@@ -9,7 +9,7 @@
     "webgl",
     "react"
   ],
-  "version": "1.2.1",
+  "version": "1.2.2",
   "license": "GPL-3.0",
   "type": "module",
   "main": "dist/core/index.cjs",
@@ -32,9 +32,12 @@
     "LICENSE"
   ],
   "devDependencies": {
+    "@happy-dom/global-registrator": "^20.10.2",
     "@types/bun": "^1.1.13",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "ts-node": "^10.9.2",
     "tslib": "^2.8.1",
     "typescript": "^5.6.3"
@@ -55,6 +58,9 @@
     }
   },
   "scripts": {
+    "test": "bun test",
+    "test:core": "bun test test/core",
+    "test:react": "bun test test/react",
     "clean": "rm -rf dist",
     "build:library": "bun ./build.ts",
     "build:types": "bunx tsc",

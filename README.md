@@ -4,6 +4,8 @@
 [![npm](https://img.shields.io/npm/v/@svey-xyz/simple-shader-component)](https://www.npmjs.com/package/@svey-xyz/simple-shader-component)
 [![GitHub commits](https://badgen.net/github/commits/svey-xyz/simple-shader-component)](https://GitHub.com/svey-xyz/simple-shader-component/commit/)
 [![GPL-3.0 license](https://img.shields.io/badge/License-GPL--3.0-green.svg)](https://github.com/svey-xyz/simple-shader-component/blob/main/LICENSE)
+[![Core Tests](https://github.com/svey-xyz/simple-shader-component/actions/workflows/test-core.yml/badge.svg?branch=main)](https://github.com/svey-xyz/simple-shader-component/actions/workflows/test-core.yml)
+[![React Tests](https://github.com/svey-xyz/simple-shader-component/actions/workflows/test-react.yml/badge.svg?branch=main)](https://github.com/svey-xyz/simple-shader-component/actions/workflows/test-react.yml)
 
 ## Description
 A simple to use WebGL shader component, with included framework wrappers and strong typing. Shaders are powerful tools and can add a lot of visual interest to a web project, but most shader tooling is complicated and adds a large bundle. This library is a tiny, zero-dependency core for rendering a GLSL shader straight into the DOM.
