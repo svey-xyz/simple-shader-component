@@ -152,6 +152,7 @@ export class Shader extends domHandler {
 
 	/**  Sets a uniform value for the shader */
 	public setUniform(uniform: ShaderTypes.UniformValue): void {
+		if (this.isDestroyed) return;
 		const { name, type, value } = uniform
 		const uLoc = this.gl.getUniformLocation(this.shaderProgram, name);
 
@@ -159,6 +160,13 @@ export class Shader extends domHandler {
 			console.error(`Uniform ${name} not found.`);
 			return;
 		}
+
+		// gl.uniform* writes target the *currently bound* program, not the
+		// program the location came from. Bind ours first; otherwise writes made
+		// before the first render (init defaults) or from LOOP hooks (which run
+		// before render() binds the program) are silently dropped with
+		// GL_INVALID_OPERATION — the classic "u_time never updates" freeze.
+		this.gl.useProgram(this.shaderProgram);
 
 		switch (type) {
 			case "float":
