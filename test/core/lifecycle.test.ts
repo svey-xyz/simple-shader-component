@@ -87,3 +87,23 @@ test("destroy removes DOM listeners, releases GL resources and is idempotent", (
 
 	shader.destroy(); // second call must not throw
 });
+
+test("destroy keeps the canvas's context usable — a new Shader on the same canvas works", () => {
+	const gl = makeGl();
+	const canvas = makeCanvas(gl);
+
+	const first = new Shader(canvas, args);
+	first.init();
+	first.destroy();
+
+	// destroy() must not lose the context: the same canvas always returns the
+	// same context, so a lost context would permanently kill every subsequent
+	// instance (React wrapper recreations, Strict Mode dev remounts).
+	expect(gl.calls).not.toContain("loseContext");
+
+	gl.calls.length = 0;
+	const second = new Shader(canvas, args);
+	second.init();
+	expect(gl.calls).toContain("drawArrays"); // renders again on the reused context
+	second.destroy();
+});

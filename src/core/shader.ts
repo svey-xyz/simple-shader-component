@@ -235,6 +235,14 @@ export class Shader extends domHandler {
 	}
 
 	// Release GL resources when the instance is destroyed.
+	//
+	// Deliberately does NOT call WEBGL_lose_context.loseContext(): a canvas
+	// hands out ONE context for its lifetime, so losing it here permanently
+	// kills the canvas for any subsequent Shader (the React wrapper reuses the
+	// same <canvas> when it recreates on args change, and React Strict Mode
+	// dev remounts do the same) — compileShader then no-ops and surfaces as
+	// "Shader compilation error: null". Deleting the program and buffer frees
+	// the GPU resources; the browser reclaims the context with the canvas.
 	protected onDestroy(): void {
 		const gl = this.gl;
 		try {
@@ -242,7 +250,6 @@ export class Shader extends domHandler {
 			gl.bindBuffer(gl.ARRAY_BUFFER, null);
 			gl.deleteProgram(this.shaderProgram);
 			gl.deleteBuffer(this.vertexBuffer);
-			gl.getExtension('WEBGL_lose_context')?.loseContext();
 		} catch {
 			// Context may already be lost; nothing else to clean up.
 		}

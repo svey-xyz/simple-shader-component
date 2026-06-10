@@ -55,8 +55,10 @@ export function makeGl(): RecordingGl {
 		drawArrays: record("drawArrays"),
 		clear() {},
 		viewport: record("viewport"),
-		// teardown
-		getExtension: () => null,
+		// teardown — expose a recording WEBGL_lose_context so suites can assert
+		// destroy() never loses the context (the canvas/context gets reused).
+		getExtension: (name: string) =>
+			name === "WEBGL_lose_context" ? { loseContext: record("loseContext") } : null,
 		deleteProgram: record("deleteProgram"),
 		deleteBuffer: record("deleteBuffer"),
 		// enums
