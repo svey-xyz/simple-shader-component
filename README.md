@@ -15,7 +15,7 @@ A simple to use WebGL shader component, with included framework wrappers and str
 While libraries like [three.js](https://threejs.org/) are amazing, not every project needs all of those features. `simple-shader-component` is a zero-dependency library that provides a simple component for rendering GLSL shaders on the web.
 
 ### What it gives you (and what it doesn't)
-This package is a **primitive, not a kit** — it renders a full-screen quad and runs a render loop. It deliberately ships **no shaders** and **no automatic uniforms**; you provide the GLSL and feed any uniforms yourself via hooks.
+This package is a platform for you to display your own shaders. It deliberately ships **no shaders** and **no automatic uniforms**; you provide the GLSL and feed any uniforms yourself via hooks.
 
 The GLSL contract:
 
