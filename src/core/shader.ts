@@ -9,7 +9,7 @@ import ShaderTypes from "../types"
  */
 export class Shader extends domHandler {
 	private hooks: Record<string, ShaderTypes.ShaderHook[]> = {};
-	private gl: WebGLRenderingContext;
+	private gl: WebGLRenderingContext | WebGL2RenderingContext;
 	private shaderProgram: WebGLProgram;
 	private vertexBuffer: WebGLBuffer;
 	private uniforms: Array<ShaderTypes.UniformValue> | undefined
@@ -18,7 +18,7 @@ export class Shader extends domHandler {
 
 	constructor(container: HTMLCanvasElement, args: ShaderTypes.ShaderArgs) {
 		super(container);
-		this.gl = container.getContext('webgl') as WebGLRenderingContext;
+		this.gl = this.createContext(container, args.webgl2 === true);
 		this.shaderProgram = this.initializeShader(args.vertShader, args.fragShader);
 		this.vertexBuffer = this.initBuffers();
 
@@ -28,6 +28,22 @@ export class Shader extends domHandler {
 		if (args.hooks) args.hooks.forEach((hook) => {
 			this.addHook(hook.methodName, hook.hook)
 		})
+	}
+
+	/**
+	 * Acquire the rendering context. When `webgl2` is requested we try
+	 * `getContext('webgl2')` (GLSL ES 3.00) first and fall back to
+	 * `getContext('webgl')` (GLSL ES 1.00) when WebGL2 is unavailable, so a
+	 * WebGL1 shader still renders on browsers without WebGL2. The default path
+	 * is unchanged: plain `getContext('webgl')`.
+	 */
+	private createContext(container: HTMLCanvasElement, webgl2: boolean): WebGLRenderingContext | WebGL2RenderingContext {
+		const gl = webgl2
+			? (container.getContext('webgl2') as WebGL2RenderingContext | null) ?? (container.getContext('webgl') as WebGLRenderingContext | null)
+			: (container.getContext('webgl') as WebGLRenderingContext | null);
+
+		if (!gl) throw new Error('Failed to acquire a WebGL rendering context');
+		return gl;
 	}
 
 	public init() {
@@ -78,7 +94,7 @@ export class Shader extends domHandler {
 		return vertexBuffer;
 	}
 
-	private loadShader(gl: WebGLRenderingContext, type: GLenum, source: string = ''): WebGLShader | null {
+	private loadShader(gl: WebGLRenderingContext | WebGL2RenderingContext, type: GLenum, source: string = ''): WebGLShader | null {
 		const shader = gl.createShader(type);
 		if (!shader) return null;
 

@@ -19,8 +19,8 @@ This package is a platform for you to display your own shaders. It deliberately 
 
 The GLSL contract:
 
-- **WebGL1 / GLSL ES 1.00.** The context is created with `getContext('webgl')`.
-- The vertex shader **must** declare the attribute `attribute vec2 a_position;` — geometry is a hardcoded full-screen quad (two triangles in clip space). No other attributes are provided.
+- **WebGL1 / GLSL ES 1.00 by default.** The context is created with `getContext('webgl')`. Opt in to **WebGL2 / GLSL ES 3.00** by passing `webgl2: true` (see [WebGL2 support](#webgl2--glsl-es-300) below).
+- The vertex shader **must** declare the attribute `attribute vec2 a_position;` — geometry is a hardcoded full-screen quad (two triangles in clip space). No other attributes are provided. (Under WebGL2, declare it as `in vec2 a_position;` — the attribute name is unchanged.)
 - There are **no automatic uniforms.** Common ones like `u_time` and `u_resolution` are *not* injected — declare them in your shader and update them from hooks (see below). `u_time` is typically driven from a `LOOP` hook via `shader.getElapsedTime()`; `u_resolution` from a `RESIZE` hook.
 
 ## Installation
@@ -83,12 +83,47 @@ All other `<canvas>` attributes (`className`, `style`, `aria-hidden`, `id`, …)
 ### `args` (`ShaderArgs`)
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
-| `vertShader` | `string` | — | Vertex shader source (GLSL ES 1.00). Must declare `attribute vec2 a_position;`. |
-| `fragShader` | `string` | — | Fragment shader source (GLSL ES 1.00). |
+| `vertShader` | `string` | — | Vertex shader source. GLSL ES 1.00 by default, or ES 3.00 when `webgl2` is `true`. Must declare the `a_position` (vec2) attribute. |
+| `fragShader` | `string` | — | Fragment shader source. GLSL ES 1.00 by default, or ES 3.00 when `webgl2` is `true`. |
 | `uniforms` | `UniformValue[]` | — | Initial uniforms, applied before the first paint. |
 | `hooks` | `{ methodName, hook }[]` | — | Lifecycle hooks (see below). |
 | `loadedClass` | `string` | `'loaded'` | Class added to the canvas once initialized. |
 | `autoStart` | `boolean` | `true` | Start the render loop inside `init()`. Set `false` to render a single static frame and start the loop later via `shader.startLoop()`. |
+| `webgl2` | `boolean` | `false` | Opt in to a WebGL2 context (GLSL ES 3.00). Falls back to WebGL1 if WebGL2 is unavailable. See [WebGL2 support](#webgl2--glsl-es-300). |
+
+## WebGL2 / GLSL ES 3.00
+By default the context is WebGL1 (GLSL ES 1.00) and nothing changes for existing consumers. Pass `webgl2: true` to request a WebGL2 context (GLSL ES 3.00), which unlocks `#version 300 es`, `in`/`out` qualifiers, integer and 3D textures, `textureLod`, multiple render targets, and more:
+
+```ts
+const args = { vertShader, fragShader, webgl2: true }
+```
+
+The context is created with `getContext('webgl2')` and **falls back to `getContext('webgl')`** when WebGL2 is unavailable — so ship a WebGL1 shader and it keeps rendering everywhere. (If you rely on ES 3.00 features, detect support yourself and provide a fallback shader.)
+
+GLSL ES 3.00 shaders **must**:
+
+- Declare `#version 300 es` on the **very first line** (no blank lines or comments before it).
+- Use `in` / `out` instead of `attribute` / `varying`.
+- Declare your own fragment output (`out vec4 fragColor;`) instead of writing to the built-in `gl_FragColor`.
+
+The full-screen-quad contract is unchanged — the vertex shader still uses the `a_position` (vec2) attribute, just declared with `in`:
+
+```glsl
+#version 300 es
+in vec2 a_position;
+void main() {
+	gl_Position = vec4(a_position, 0.0, 1.0);
+}
+```
+
+```glsl
+#version 300 es
+precision highp float;
+out vec4 fragColor;
+void main() {
+	fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+}
+```
 
 ## Hooks
 Hooks attach logic to a lifecycle method. Pass them on construction (via `args.hooks`) or add them later with `shader.addHook(...)`.
