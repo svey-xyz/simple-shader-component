@@ -19,9 +19,10 @@ This package is a platform for you to display your own shaders. It deliberately 
 
 The GLSL contract:
 
-- **WebGL1 / GLSL ES 1.00.** The context is created with `getContext('webgl')`.
-- The vertex shader **must** declare the attribute `attribute vec2 a_position;` — geometry is a hardcoded full-screen quad (two triangles in clip space). No other attributes are provided.
-- There are **no automatic uniforms.** Common ones like `u_time` and `u_resolution` are *not* injected — declare them in your shader and update them from hooks (see below). `u_time` is typically driven from a `LOOP` hook via `shader.getElapsedTime()`; `u_resolution` from a `RESIZE` hook.
+- **WebGL1 / GLSL ES 1.00 by default.** The context is created with `getContext('webgl')`. Pass `args.contextAttributes` (`WebGLContextAttributes`) to customize it — `alpha`, `premultipliedAlpha`, `antialias`, `preserveDrawingBuffer`, etc. Opt in to **WebGL2 / GLSL ES 3.00** by passing `webgl2: true` (see [WebGL2 support](#webgl2--glsl-es-300) below).
+- **Premultiplied-alpha output.** The canvas is composited over the page with premultiplied alpha (the browser default). Your fragment shader must write **premultiplied** color to `gl_FragColor` — multiply `rgb` by `a` yourself — or you'll see light fringing where the canvas overlaps page content. Want straight alpha instead? Pass `contextAttributes: { premultipliedAlpha: false }`. Want an opaque canvas? Pass `contextAttributes: { alpha: false }`.
+- The vertex shader **must** declare the attribute `attribute vec2 a_position;` — geometry is a hardcoded full-screen quad (two triangles in clip space). No other attributes are provided. (Under WebGL2, declare it as `in vec2 a_position;` — the attribute name is unchanged.)
+- There are **no automatic uniforms** with one convenience exception. Common ones like `u_time` are *not* injected — declare them in your shader and update them from hooks (see below). `u_time` is typically driven from a `LOOP` hook via `shader.getElapsedTime()`. **`u_resolution`** is the exception: if (and only if) your shader declares it, it is populated automatically on every resize with the **physical pixel** size of the drawing buffer (`cssSize * devicePixelRatio`, capped by `maxPixelRatio`) so `gl_FragCoord`-based maths stays correct on HiDPI displays. A `RESIZE` hook still runs afterwards, so you can override it (e.g. with logical pixels) if you prefer.
 
 ## Installation
 ```sh
@@ -74,21 +75,97 @@ export const Background = () => {
 ### `<SimpleShaderCanvas>` props
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `args` | `ShaderArgs` | — | Shader configuration (see below). **Memoize it** — a new reference tears down and recreates the instance. |
+| `args` | `ShaderArgs` | — | Shader configuration (see below). Changing **`uniforms`** is reconciled in place (no teardown), so live uniform values can flow straight through props. Changing the shader sources (`vertShader`/`fragShader`) or the structural options (`hooks`, `loadedClass`, `autoStart`) recreates the instance — **memoize those** to keep them stable. |
 | `paused` | `boolean` | `false` | Pause/resume the render loop **without unmounting**. Toggling it does not recreate the WebGL context. Useful for pausing offscreen or on tab-hidden. |
 | `respectReducedMotion` | `boolean` | `false` | When `true`, the loop won't auto-start if the user has `prefers-reduced-motion: reduce` (a single static frame is still rendered). |
+| `pauseWhenOffscreen` | `boolean` | `false` | When `true`, an `IntersectionObserver` pauses the loop while the canvas is scrolled out of the viewport and resumes it on re-entry — no manual wiring, no GL context recreation. |
+| `pauseWhenHidden` | `boolean` | `false` | When `true`, the [Page Visibility API](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) pauses the loop while the tab/document is hidden and resumes it when visible again. |
+| `offscreenRootMargin` | `string` | `'128px'` | `rootMargin` for the `pauseWhenOffscreen` observer — grow it to start rendering slightly before the canvas enters the viewport. |
+| `onUnsupported` | `(error: Error) => void` | — | Called when WebGL can't be initialized (see [Graceful degradation](#graceful-degradation)). Receives a `WebGLUnavailableError`. |
+| `fallback` | `ReactNode` | — | Rendered in place of the canvas when WebGL is unavailable. Falls back to `children` if omitted. |
+
+These props are opt-in and default off, so existing behaviour is unchanged. They fold the common battery/CPU-saving pattern — a manual `IntersectionObserver` + `visibilitychange` listener driving `paused` — into the component. The effective paused state is `paused || (pauseWhenOffscreen && offscreen) || (pauseWhenHidden && hidden)`, and `respectReducedMotion` still wins (the loop stays stopped). Toggling any of them pauses in place via `startLoop()`/`stopLoop()` — the `Shader` instance and WebGL context are never recreated.
+
+```tsx
+// Render only while on-screen and the tab is focused.
+<SimpleShaderCanvas args={args} pauseWhenOffscreen pauseWhenHidden />
+```
 
 All other `<canvas>` attributes (`className`, `style`, `aria-hidden`, `id`, …) are forwarded to the canvas. The canvas defaults to `width: 100%` and `aria-hidden` (it's decorative); pass `aria-hidden={false}` to override. The component is unstyled beyond that — size it with your own CSS.
 
 ### `args` (`ShaderArgs`)
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
-| `vertShader` | `string` | — | Vertex shader source (GLSL ES 1.00). Must declare `attribute vec2 a_position;`. |
-| `fragShader` | `string` | — | Fragment shader source (GLSL ES 1.00). |
-| `uniforms` | `UniformValue[]` | — | Initial uniforms, applied before the first paint. |
+| `vertShader` | `string` | — | Vertex shader source. GLSL ES 1.00 by default, or ES 3.00 when `webgl2` is `true`. Must declare the `a_position` (vec2) attribute. |
+| `fragShader` | `string` | — | Fragment shader source. GLSL ES 1.00 by default, or ES 3.00 when `webgl2` is `true`. |
+| `uniforms` | `UniformValue[]` | — | Uniforms, applied before the first paint and re-applied in place whenever the array changes (no teardown). |
 | `hooks` | `{ methodName, hook }[]` | — | Lifecycle hooks (see below). |
 | `loadedClass` | `string` | `'loaded'` | Class added to the canvas once initialized. |
 | `autoStart` | `boolean` | `true` | Start the render loop inside `init()`. Set `false` to render a single static frame and start the loop later via `shader.startLoop()`. |
+| `contextAttributes` | `WebGLContextAttributes` | — | Forwarded verbatim to `getContext('webgl', …)`. Controls `alpha`, `premultipliedAlpha` (see the [premultiplied-alpha contract](#what-it-gives-you-and-what-it-doesnt)), `antialias`, `preserveDrawingBuffer`, `depth`, `stencil`, `powerPreference`, etc. |
+| `maxPixelRatio` | `number` | `2` | Upper bound on `devicePixelRatio` when sizing the drawing buffer for HiDPI / retina output. The backing store is sized at `cssSize * min(devicePixelRatio, maxPixelRatio)`; the CSS display size is unchanged. Caps fill cost on very high-DPR phones. On 1× displays this is a no-op (identical to pre-fix behaviour). |
+| `webgl2` | `boolean` | `false` | Opt in to a WebGL2 context (GLSL ES 3.00). Falls back to WebGL1 if WebGL2 is unavailable. See [WebGL2 support](#webgl2--glsl-es-300). |
+
+## Graceful degradation
+WebGL isn't always available — it can be disabled, the device may have no usable GPU or a blocklisted driver, or too many contexts may already be live. When `getContext('webgl')` returns `null`, the component **does not crash**: it logs a warning, calls `onUnsupported(error)` and renders your `fallback` (or `children`) instead.
+
+```tsx
+<SimpleShaderCanvas
+	args={args}
+	onUnsupported={(err) => reportError(err)}
+	fallback={<div className="static-gradient" />}
+/>
+```
+
+Using the core `Shader` class directly? The constructor throws a typed `WebGLUnavailableError` (instead of an opaque `TypeError`), so you can catch it and render your own fallback:
+
+```ts
+import { Shader, WebGLUnavailableError } from '@svey-xyz/simple-shader-component'
+
+try {
+	new Shader(canvas, args).init()
+} catch (err) {
+	if (err instanceof WebGLUnavailableError) {
+		// show a static fallback
+	} else throw err
+}
+```
+
+The library first tries `getContext('webgl')`, then the legacy `experimental-webgl`, before giving up.
+
+## WebGL2 / GLSL ES 3.00
+By default the context is WebGL1 (GLSL ES 1.00) and nothing changes for existing consumers. Pass `webgl2: true` to request a WebGL2 context (GLSL ES 3.00), which unlocks `#version 300 es`, `in`/`out` qualifiers, integer and 3D textures, `textureLod`, multiple render targets, and more:
+
+```ts
+const args = { vertShader, fragShader, webgl2: true }
+```
+
+The context is created with `getContext('webgl2')` and **falls back to `getContext('webgl')`** when WebGL2 is unavailable — so ship a WebGL1 shader and it keeps rendering everywhere. (If you rely on ES 3.00 features, detect support yourself and provide a fallback shader.)
+
+GLSL ES 3.00 shaders **must**:
+
+- Declare `#version 300 es` on the **very first line** (no blank lines or comments before it).
+- Use `in` / `out` instead of `attribute` / `varying`.
+- Declare your own fragment output (`out vec4 fragColor;`) instead of writing to the built-in `gl_FragColor`.
+
+The full-screen-quad contract is unchanged — the vertex shader still uses the `a_position` (vec2) attribute, just declared with `in`:
+
+```glsl
+#version 300 es
+in vec2 a_position;
+void main() {
+	gl_Position = vec4(a_position, 0.0, 1.0);
+}
+```
+
+```glsl
+#version 300 es
+precision highp float;
+out vec4 fragColor;
+void main() {
+	fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+}
+```
 
 ## Hooks
 Hooks attach logic to a lifecycle method. Pass them on construction (via `args.hooks`) or add them later with `shader.addHook(...)`.
@@ -109,12 +186,12 @@ The `Shader` instance (and its `domHandler` base) expose:
 
 - `init()` — compile, size, render and (unless `autoStart` is `false`) start the loop.
 - `startLoop(refreshRate?)` / `stopLoop()` — start or pause the render loop without tearing anything down.
-- `destroy()` — stop the loop, cancel pending frames, remove the window/canvas listeners and release GL resources. **Idempotent.** The React wrapper calls this automatically on unmount and when `args` change.
+- `destroy()` — stop the loop, cancel pending frames, remove the window/canvas listeners and release GL resources. **Idempotent.** The React wrapper calls this automatically on unmount and when the shader sources / structural options change (not on uniform-only changes).
 - `getElapsedTime()` — seconds since the loop started.
-- `getUniform(name)` / `setUniform({ name, type, value })`.
+- `getUniform(name)` / `setUniform({ name, type, value })` / `setUniforms([...])` — read or write uniform values in place (no recompile).
 
 ## Lifecycle & cleanup
-The React wrapper owns the instance lifecycle: it creates a `Shader` on mount, calls `destroy()` on unmount or when `args` change, and pauses/resumes via the `paused` prop. If you use the core `Shader` class directly, **call `destroy()`** when you're done — otherwise the render loop and event listeners leak.
+The React wrapper owns the instance lifecycle: it creates a `Shader` on mount, calls `destroy()` on unmount or when the shader sources / structural options change (uniform-only changes are reconciled in place), and pauses/resumes via the `paused` prop. If you use the core `Shader` class directly, **call `destroy()`** when you're done — otherwise the render loop and event listeners leak.
 
 ## License
 GPL-3.0 — see [LICENSE](./LICENSE).

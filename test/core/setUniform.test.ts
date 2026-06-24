@@ -36,6 +36,30 @@ test("setUniform dispatches every uniform type to the right gl call", () => {
 	shader.destroy();
 });
 
+test("setUniforms writes every uniform in place without recompiling", () => {
+	const gl = makeGl();
+	const shader = new Shader(makeCanvas(gl), { vertShader: "v", fragShader: "f" });
+	gl.calls.length = 0;
+	shader.setUniforms([
+		{ name: "u_a", type: "float", value: 1 },
+		{ name: "u_b", type: "vec2", value: new Float32Array(2) },
+	]);
+	// Two uniform writes, no program/buffer teardown or recompile.
+	expect(gl.calls).toEqual(["useProgram", "uniform1f", "useProgram", "uniform2fv"]);
+	expect(gl.calls).not.toContain("deleteProgram");
+	expect(gl.calls).not.toContain("createProgram");
+	shader.destroy();
+});
+
+test("setUniforms after destroy is a no-op", () => {
+	const gl = makeGl();
+	const shader = new Shader(makeCanvas(gl), { vertShader: "v", fragShader: "f" });
+	shader.destroy();
+	gl.calls.length = 0;
+	shader.setUniforms([{ name: "u_a", type: "float", value: 1 }]);
+	expect(gl.calls).toEqual([]);
+});
+
 test("setUniform after destroy is a no-op", () => {
 	const gl = makeGl();
 	const shader = new Shader(makeCanvas(gl), { vertShader: "v", fragShader: "f" });

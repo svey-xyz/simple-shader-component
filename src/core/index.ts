@@ -1,4 +1,4 @@
-export { Shader } from './shader'
+export { Shader, WebGLUnavailableError } from './shader'
 export { domHandler } from './domHandler'
 export { MethodName } from './domHandler'
 
