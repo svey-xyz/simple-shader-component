@@ -13,39 +13,63 @@ const common = {
 	define: { "process.env.NODE_ENV": JSON.stringify("production") },
 };
 
-const esm = await Bun.build({ ...common, format: "esm" });
-const cjs = await Bun.build({ ...common, format: "cjs", naming: "[dir]/[name].cjs" });
+/**
+ * Bundle the ESM + CJS outputs for both entry points. Throws on any Bun.build
+ * failure. Exported (rather than run at import) so the packaging test suite can
+ * produce the artifacts it asserts against without going through the integrity
+ * guard below — that suite is the independent safety net.
+ */
+export async function buildLibrary(): Promise<void> {
+	const esm = await Bun.build({ ...common, format: "esm" });
+	const cjs = await Bun.build({ ...common, format: "cjs", naming: "[dir]/[name].cjs" });
 
-let failed = false;
-for (const result of [esm, cjs]) {
-	if (!result.success) {
-		failed = true;
+	const failures = [esm, cjs].filter((result) => !result.success);
+	if (failures.length > 0) {
 		console.error("Build failed");
-		for (const message of result.logs) {
-			console.error(message);
+		for (const result of failures) {
+			for (const message of result.logs) console.error(message);
 		}
+		throw new Error("Bun.build reported a failure");
 	}
 }
 
-if (failed) process.exit(1);
+/**
+ * Public core exports that MUST survive bundling. Kept here so the build guard
+ * and the packaging test assert against one list.
+ */
+export const EXPECTED_CORE_EXPORTS = [
+	"Shader",
+	"WebGLUnavailableError",
+	"domHandler",
+	"MethodName",
+] as const;
 
-// --- Post-build export integrity guard ------------------------------------
-// Regression guard for the bug that shipped in 1.3.0: with `sideEffects:false`
-// + minify, Bun.build tree-shook the `MethodName` enum and dropped the export
-// alias for the re-exported `domHandler` base class, leaving the published ESM
-// with dangling `export { … }` bindings that throw on import. Fail the build
-// loudly if any public core export is missing from the emitted ESM.
-const EXPECTED_CORE_EXPORTS = ["Shader", "WebGLUnavailableError", "domHandler", "MethodName"] as const;
-try {
-	const mod: Record<string, unknown> = await import(new URL("./dist/core/index.js", import.meta.url).href);
+/**
+ * Import the freshly emitted ESM and throw if the bundler dropped any public
+ * export. Regression guard for the 1.3.0 break, where `sideEffects:false` +
+ * minify tree-shook the `MethodName` enum and dropped the export alias for the
+ * re-exported `domHandler` base class, shipping an ESM bundle that threw on
+ * import. The publish workflow runs `bun run build` (not the tests), so this
+ * guard is the publish-time backstop; `test/package` is the PR/CI backstop.
+ */
+export async function assertCoreExportsIntact(): Promise<void> {
+	let mod: Record<string, unknown>;
+	try {
+		mod = await import(new URL("./dist/core/index.js", import.meta.url).href);
+	} catch (error) {
+		throw new Error(`Export integrity check failed — could not import dist/core/index.js: ${error}`);
+	}
 	const missing = EXPECTED_CORE_EXPORTS.filter((name) => mod[name] === undefined);
 	if (missing.length > 0) {
-		console.error(`Export integrity check failed — dist/core/index.js is missing: ${missing.join(", ")}`);
-		process.exit(1);
+		throw new Error(`Export integrity check failed — dist/core/index.js is missing: ${missing.join(", ")}`);
 	}
-} catch (error) {
-	console.error("Export integrity check failed — could not import dist/core/index.js:", error);
-	process.exit(1);
+}
+
+// Run the build + guard only when executed directly (`bun ./build.ts`), never
+// on import (so the packaging test can call `buildLibrary()` in isolation).
+if (import.meta.main) {
+	await buildLibrary();
+	await assertCoreExportsIntact();
 }
 
 export {};
