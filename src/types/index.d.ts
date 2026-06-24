@@ -41,7 +41,14 @@ export type ShaderArgs = {
 	 * - `depth`, `stencil`, `powerPreference`, `failIfMajorPerformanceCaveat`,
 	 *   `desynchronized` — see {@link WebGLContextAttributes}.
 	 */
-	contextAttributes?: WebGLContextAttributes
+	contextAttributes?: WebGLContextAttributes,
+	/**
+	 * Upper bound on the device pixel ratio used to size the drawing buffer on
+	 * HiDPI / retina displays. The backing store is sized at
+	 * `cssSize * min(window.devicePixelRatio, maxPixelRatio)`, so this caps fill
+	 * cost on very high-DPR phones. Default 2.
+	 */
+	maxPixelRatio?: number
 }
 
 export type UniformValue = {
