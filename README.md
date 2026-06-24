@@ -77,6 +77,16 @@ export const Background = () => {
 | `args` | `ShaderArgs` | — | Shader configuration (see below). **Memoize it** — a new reference tears down and recreates the instance. |
 | `paused` | `boolean` | `false` | Pause/resume the render loop **without unmounting**. Toggling it does not recreate the WebGL context. Useful for pausing offscreen or on tab-hidden. |
 | `respectReducedMotion` | `boolean` | `false` | When `true`, the loop won't auto-start if the user has `prefers-reduced-motion: reduce` (a single static frame is still rendered). |
+| `pauseWhenOffscreen` | `boolean` | `false` | When `true`, an `IntersectionObserver` pauses the loop while the canvas is scrolled out of the viewport and resumes it on re-entry — no manual wiring, no GL context recreation. |
+| `pauseWhenHidden` | `boolean` | `false` | When `true`, the [Page Visibility API](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) pauses the loop while the tab/document is hidden and resumes it when visible again. |
+| `offscreenRootMargin` | `string` | `'128px'` | `rootMargin` for the `pauseWhenOffscreen` observer — grow it to start rendering slightly before the canvas enters the viewport. |
+
+These props are opt-in and default off, so existing behaviour is unchanged. They fold the common battery/CPU-saving pattern — a manual `IntersectionObserver` + `visibilitychange` listener driving `paused` — into the component. The effective paused state is `paused || (pauseWhenOffscreen && offscreen) || (pauseWhenHidden && hidden)`, and `respectReducedMotion` still wins (the loop stays stopped). Toggling any of them pauses in place via `startLoop()`/`stopLoop()` — the `Shader` instance and WebGL context are never recreated.
+
+```tsx
+// Render only while on-screen and the tab is focused.
+<SimpleShaderCanvas args={args} pauseWhenOffscreen pauseWhenHidden />
+```
 
 All other `<canvas>` attributes (`className`, `style`, `aria-hidden`, `id`, …) are forwarded to the canvas. The canvas defaults to `width: 100%` and `aria-hidden` (it's decorative); pass `aria-hidden={false}` to override. The component is unstyled beyond that — size it with your own CSS.
 
