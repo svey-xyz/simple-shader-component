@@ -150,6 +150,17 @@ export class Shader extends domHandler {
 		return this.gl.getUniform(this.shaderProgram, uLoc)
 	}
 
+	/**
+	 * Reconcile the full uniform set in place: cache it and write every value to
+	 * the program via `setUniform`. This is the cheap path the React wrapper uses
+	 * when only uniform values change — no program recompile or context teardown.
+	 */
+	public setUniforms(uniforms: Array<ShaderTypes.UniformValue>): void {
+		if (this.isDestroyed) return;
+		this.uniforms = uniforms;
+		uniforms.forEach((uniform) => this.setUniform(uniform));
+	}
+
 	/**  Sets a uniform value for the shader */
 	public setUniform(uniform: ShaderTypes.UniformValue): void {
 		if (this.isDestroyed) return;

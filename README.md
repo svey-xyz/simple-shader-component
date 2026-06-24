@@ -74,7 +74,7 @@ export const Background = () => {
 ### `<SimpleShaderCanvas>` props
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `args` | `ShaderArgs` | — | Shader configuration (see below). **Memoize it** — a new reference tears down and recreates the instance. |
+| `args` | `ShaderArgs` | — | Shader configuration (see below). Changing **`uniforms`** is reconciled in place (no teardown), so live uniform values can flow straight through props. Changing the shader sources (`vertShader`/`fragShader`) or the structural options (`hooks`, `loadedClass`, `autoStart`) recreates the instance — **memoize those** to keep them stable. |
 | `paused` | `boolean` | `false` | Pause/resume the render loop **without unmounting**. Toggling it does not recreate the WebGL context. Useful for pausing offscreen or on tab-hidden. |
 | `respectReducedMotion` | `boolean` | `false` | When `true`, the loop won't auto-start if the user has `prefers-reduced-motion: reduce` (a single static frame is still rendered). |
 
@@ -85,7 +85,7 @@ All other `<canvas>` attributes (`className`, `style`, `aria-hidden`, `id`, …)
 | --- | --- | --- | --- |
 | `vertShader` | `string` | — | Vertex shader source (GLSL ES 1.00). Must declare `attribute vec2 a_position;`. |
 | `fragShader` | `string` | — | Fragment shader source (GLSL ES 1.00). |
-| `uniforms` | `UniformValue[]` | — | Initial uniforms, applied before the first paint. |
+| `uniforms` | `UniformValue[]` | — | Uniforms, applied before the first paint and re-applied in place whenever the array changes (no teardown). |
 | `hooks` | `{ methodName, hook }[]` | — | Lifecycle hooks (see below). |
 | `loadedClass` | `string` | `'loaded'` | Class added to the canvas once initialized. |
 | `autoStart` | `boolean` | `true` | Start the render loop inside `init()`. Set `false` to render a single static frame and start the loop later via `shader.startLoop()`. |
@@ -109,12 +109,12 @@ The `Shader` instance (and its `domHandler` base) expose:
 
 - `init()` — compile, size, render and (unless `autoStart` is `false`) start the loop.
 - `startLoop(refreshRate?)` / `stopLoop()` — start or pause the render loop without tearing anything down.
-- `destroy()` — stop the loop, cancel pending frames, remove the window/canvas listeners and release GL resources. **Idempotent.** The React wrapper calls this automatically on unmount and when `args` change.
+- `destroy()` — stop the loop, cancel pending frames, remove the window/canvas listeners and release GL resources. **Idempotent.** The React wrapper calls this automatically on unmount and when the shader sources / structural options change (not on uniform-only changes).
 - `getElapsedTime()` — seconds since the loop started.
-- `getUniform(name)` / `setUniform({ name, type, value })`.
+- `getUniform(name)` / `setUniform({ name, type, value })` / `setUniforms([...])` — read or write uniform values in place (no recompile).
 
 ## Lifecycle & cleanup
-The React wrapper owns the instance lifecycle: it creates a `Shader` on mount, calls `destroy()` on unmount or when `args` change, and pauses/resumes via the `paused` prop. If you use the core `Shader` class directly, **call `destroy()`** when you're done — otherwise the render loop and event listeners leak.
+The React wrapper owns the instance lifecycle: it creates a `Shader` on mount, calls `destroy()` on unmount or when the shader sources / structural options change (uniform-only changes are reconciled in place), and pauses/resumes via the `paused` prop. If you use the core `Shader` class directly, **call `destroy()`** when you're done — otherwise the render loop and event listeners leak.
 
 ## License
 GPL-3.0 — see [LICENSE](./LICENSE).
