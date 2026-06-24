@@ -48,7 +48,21 @@ export type ShaderArgs = {
 	 * `cssSize * min(window.devicePixelRatio, maxPixelRatio)`, so this caps fill
 	 * cost on very high-DPR phones. Default 2.
 	 */
-	maxPixelRatio?: number
+	maxPixelRatio?: number,
+	/**
+	 * Opt in to a WebGL2 context (GLSL ES 3.00). Default false (WebGL1 /
+	 * GLSL ES 1.00 — unchanged for existing consumers).
+	 *
+	 * When true the context is created with `getContext('webgl2')`, falling
+	 * back to `getContext('webgl')` if WebGL2 is unavailable — so a WebGL1
+	 * shader keeps rendering even on a browser without WebGL2.
+	 *
+	 * GLSL ES 3.00 shaders **must** declare `#version 300 es` on the very first
+	 * line, and use `in`/`out` instead of `attribute`/`varying` and a
+	 * user-declared `out vec4` colour instead of `gl_FragColor`. The full-screen
+	 * quad `a_position` (vec2) attribute contract is unchanged.
+	 */
+	webgl2?: boolean
 }
 
 export type UniformValue = {

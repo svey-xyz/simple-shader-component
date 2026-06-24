@@ -19,9 +19,9 @@ This package is a platform for you to display your own shaders. It deliberately 
 
 The GLSL contract:
 
-- **WebGL1 / GLSL ES 1.00.** The context is created with `getContext('webgl')`. Pass `args.contextAttributes` (`WebGLContextAttributes`) to customize it — `alpha`, `premultipliedAlpha`, `antialias`, `preserveDrawingBuffer`, etc.
+- **WebGL1 / GLSL ES 1.00 by default.** The context is created with `getContext('webgl')`. Pass `args.contextAttributes` (`WebGLContextAttributes`) to customize it — `alpha`, `premultipliedAlpha`, `antialias`, `preserveDrawingBuffer`, etc. Opt in to **WebGL2 / GLSL ES 3.00** by passing `webgl2: true` (see [WebGL2 support](#webgl2--glsl-es-300) below).
 - **Premultiplied-alpha output.** The canvas is composited over the page with premultiplied alpha (the browser default). Your fragment shader must write **premultiplied** color to `gl_FragColor` — multiply `rgb` by `a` yourself — or you'll see light fringing where the canvas overlaps page content. Want straight alpha instead? Pass `contextAttributes: { premultipliedAlpha: false }`. Want an opaque canvas? Pass `contextAttributes: { alpha: false }`.
-- The vertex shader **must** declare the attribute `attribute vec2 a_position;` — geometry is a hardcoded full-screen quad (two triangles in clip space). No other attributes are provided.
+- The vertex shader **must** declare the attribute `attribute vec2 a_position;` — geometry is a hardcoded full-screen quad (two triangles in clip space). No other attributes are provided. (Under WebGL2, declare it as `in vec2 a_position;` — the attribute name is unchanged.)
 - There are **no automatic uniforms** with one convenience exception. Common ones like `u_time` are *not* injected — declare them in your shader and update them from hooks (see below). `u_time` is typically driven from a `LOOP` hook via `shader.getElapsedTime()`. **`u_resolution`** is the exception: if (and only if) your shader declares it, it is populated automatically on every resize with the **physical pixel** size of the drawing buffer (`cssSize * devicePixelRatio`, capped by `maxPixelRatio`) so `gl_FragCoord`-based maths stays correct on HiDPI displays. A `RESIZE` hook still runs afterwards, so you can override it (e.g. with logical pixels) if you prefer.
 
 ## Installation
@@ -96,14 +96,15 @@ All other `<canvas>` attributes (`className`, `style`, `aria-hidden`, `id`, …)
 ### `args` (`ShaderArgs`)
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
-| `vertShader` | `string` | — | Vertex shader source (GLSL ES 1.00). Must declare `attribute vec2 a_position;`. |
-| `fragShader` | `string` | — | Fragment shader source (GLSL ES 1.00). |
+| `vertShader` | `string` | — | Vertex shader source. GLSL ES 1.00 by default, or ES 3.00 when `webgl2` is `true`. Must declare the `a_position` (vec2) attribute. |
+| `fragShader` | `string` | — | Fragment shader source. GLSL ES 1.00 by default, or ES 3.00 when `webgl2` is `true`. |
 | `uniforms` | `UniformValue[]` | — | Initial uniforms, applied before the first paint. |
 | `hooks` | `{ methodName, hook }[]` | — | Lifecycle hooks (see below). |
 | `loadedClass` | `string` | `'loaded'` | Class added to the canvas once initialized. |
 | `autoStart` | `boolean` | `true` | Start the render loop inside `init()`. Set `false` to render a single static frame and start the loop later via `shader.startLoop()`. |
 | `contextAttributes` | `WebGLContextAttributes` | — | Forwarded verbatim to `getContext('webgl', …)`. Controls `alpha`, `premultipliedAlpha` (see the [premultiplied-alpha contract](#what-it-gives-you-and-what-it-doesnt)), `antialias`, `preserveDrawingBuffer`, `depth`, `stencil`, `powerPreference`, etc. |
 | `maxPixelRatio` | `number` | `2` | Upper bound on `devicePixelRatio` when sizing the drawing buffer for HiDPI / retina output. The backing store is sized at `cssSize * min(devicePixelRatio, maxPixelRatio)`; the CSS display size is unchanged. Caps fill cost on very high-DPR phones. On 1× displays this is a no-op (identical to pre-fix behaviour). |
+| `webgl2` | `boolean` | `false` | Opt in to a WebGL2 context (GLSL ES 3.00). Falls back to WebGL1 if WebGL2 is unavailable. See [WebGL2 support](#webgl2--glsl-es-300). |
 
 ## Graceful degradation
 WebGL isn't always available — it can be disabled, the device may have no usable GPU or a blocklisted driver, or too many contexts may already be live. When `getContext('webgl')` returns `null`, the component **does not crash**: it logs a warning, calls `onUnsupported(error)` and renders your `fallback` (or `children`) instead.
@@ -131,6 +132,40 @@ try {
 ```
 
 The library first tries `getContext('webgl')`, then the legacy `experimental-webgl`, before giving up.
+
+## WebGL2 / GLSL ES 3.00
+By default the context is WebGL1 (GLSL ES 1.00) and nothing changes for existing consumers. Pass `webgl2: true` to request a WebGL2 context (GLSL ES 3.00), which unlocks `#version 300 es`, `in`/`out` qualifiers, integer and 3D textures, `textureLod`, multiple render targets, and more:
+
+```ts
+const args = { vertShader, fragShader, webgl2: true }
+```
+
+The context is created with `getContext('webgl2')` and **falls back to `getContext('webgl')`** when WebGL2 is unavailable — so ship a WebGL1 shader and it keeps rendering everywhere. (If you rely on ES 3.00 features, detect support yourself and provide a fallback shader.)
+
+GLSL ES 3.00 shaders **must**:
+
+- Declare `#version 300 es` on the **very first line** (no blank lines or comments before it).
+- Use `in` / `out` instead of `attribute` / `varying`.
+- Declare your own fragment output (`out vec4 fragColor;`) instead of writing to the built-in `gl_FragColor`.
+
+The full-screen-quad contract is unchanged — the vertex shader still uses the `a_position` (vec2) attribute, just declared with `in`:
+
+```glsl
+#version 300 es
+in vec2 a_position;
+void main() {
+	gl_Position = vec4(a_position, 0.0, 1.0);
+}
+```
+
+```glsl
+#version 300 es
+precision highp float;
+out vec4 fragColor;
+void main() {
+	fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+}
+```
 
 ## Hooks
 Hooks attach logic to a lifecycle method. Pass them on construction (via `args.hooks`) or add them later with `shader.addHook(...)`.

@@ -31,7 +31,7 @@ export class WebGLUnavailableError extends Error {
  */
 export class Shader extends domHandler {
 	private hooks: Record<string, ShaderTypes.ShaderHook[]> = {};
-	private gl: WebGLRenderingContext;
+	private gl: WebGLRenderingContext | WebGL2RenderingContext;
 	private shaderProgram: WebGLProgram;
 	private vertexBuffer: WebGLBuffer;
 	private uniforms: Array<ShaderTypes.UniformValue> | undefined
@@ -42,23 +42,13 @@ export class Shader extends domHandler {
 
 	constructor(container: HTMLCanvasElement, args: ShaderTypes.ShaderArgs) {
 		super(container);
-		// The WebGL1 context is composited over the page with premultiplied
-		// alpha (the browser default, i.e. `premultipliedAlpha: true`). Fragment
-		// shaders must therefore write premultiplied colors to `gl_FragColor`
-		// (rgb already multiplied by a); straight alpha causes light fringing.
-		// `args.contextAttributes` is forwarded verbatim so callers can opt into
-		// an opaque canvas (`alpha: false`), straight alpha
-		// (`premultipliedAlpha: false`), `preserveDrawingBuffer`, etc. See
-		// ShaderArgs.contextAttributes for the full contract.
-		//
-		// getContext() returns null when WebGL can't be initialised. Try the
-		// legacy 'experimental-webgl' id before giving up (older/edge browsers),
-		// then fail with a typed, catchable error instead of letting the next
-		// `this.gl.*` call blow up with an opaque null-dereference TypeError.
-		const gl = (container.getContext('webgl', args.contextAttributes) ??
-			container.getContext('experimental-webgl' as 'webgl', args.contextAttributes)) as WebGLRenderingContext | null;
-		if (!gl) throw new WebGLUnavailableError();
-		this.gl = gl;
+		// Acquire the WebGL context. `args.contextAttributes` is forwarded
+		// verbatim (premultiplied-alpha output contract — see
+		// ShaderArgs.contextAttributes); `args.webgl2` opts into WebGL2 / GLSL
+		// ES 3.00 with a WebGL1 fallback. A typed WebGLUnavailableError is
+		// thrown if no context can be created, instead of an opaque
+		// null-dereference on the next `this.gl.*` call.
+		this.gl = this.createContext(container, args.webgl2 === true, args.contextAttributes);
 		this.shaderProgram = this.initializeShader(args.vertShader, args.fragShader);
 		this.vertexBuffer = this.initBuffers();
 
@@ -69,6 +59,36 @@ export class Shader extends domHandler {
 		if (args.hooks) args.hooks.forEach((hook) => {
 			this.addHook(hook.methodName, hook.hook)
 		})
+	}
+
+	/**
+	 * Acquire the rendering context.
+	 *
+	 * - When `webgl2` is requested we try `getContext('webgl2')` (GLSL ES 3.00)
+	 *   first and fall back to `getContext('webgl')` (GLSL ES 1.00) when WebGL2
+	 *   is unavailable, so a WebGL1 shader still renders everywhere. The default
+	 *   path is plain `getContext('webgl')`.
+	 * - The legacy `experimental-webgl` id is tried before giving up, for
+	 *   older / edge browsers.
+	 * - `contextAttributes` is forwarded verbatim to every `getContext` call
+	 *   (alpha / premultipliedAlpha / antialias / preserveDrawingBuffer / …).
+	 * - If nothing can be acquired we throw a typed, catchable
+	 *   {@link WebGLUnavailableError} instead of returning null and letting a
+	 *   later `this.gl.*` call blow up with an opaque TypeError.
+	 */
+	private createContext(
+		container: HTMLCanvasElement,
+		webgl2: boolean,
+		contextAttributes?: WebGLContextAttributes,
+	): WebGLRenderingContext | WebGL2RenderingContext {
+		const get = (id: 'webgl2' | 'webgl' | 'experimental-webgl') =>
+			container.getContext(id as 'webgl', contextAttributes) as
+				| WebGLRenderingContext
+				| WebGL2RenderingContext
+				| null;
+		const gl = (webgl2 ? get('webgl2') : null) ?? get('webgl') ?? get('experimental-webgl');
+		if (!gl) throw new WebGLUnavailableError();
+		return gl;
 	}
 
 	public init() {
@@ -119,7 +139,7 @@ export class Shader extends domHandler {
 		return vertexBuffer;
 	}
 
-	private loadShader(gl: WebGLRenderingContext, type: GLenum, source: string = ''): WebGLShader | null {
+	private loadShader(gl: WebGLRenderingContext | WebGL2RenderingContext, type: GLenum, source: string = ''): WebGLShader | null {
 		const shader = gl.createShader(type);
 		if (!shader) return null;
 
