@@ -87,6 +87,39 @@ test("unmount removes canvas listeners (no leaked input handlers)", async () => 
 	expect(ran.length).toBe(1); // unchanged after unmount
 });
 
+test("changing only uniform values updates in place without teardown (#6)", async () => {
+	await render(
+		<SimpleShaderCanvas
+			args={{ ...args, uniforms: [{ name: "u_c", type: "float", value: 0 }] }}
+			paused
+		/>,
+	);
+	gl.calls.length = 0;
+
+	// New args object, same shader sources, different uniform value.
+	await render(
+		<SimpleShaderCanvas
+			args={{ ...args, uniforms: [{ name: "u_c", type: "float", value: 1 }] }}
+			paused
+		/>,
+	);
+
+	expect(gl.calls).not.toContain("deleteProgram"); // no teardown
+	expect(gl.calls).toContain("uniform1f"); // value written in place
+
+	await unmount();
+});
+
+test("changing the shader source recreates the instance (#6)", async () => {
+	await render(<SimpleShaderCanvas args={{ vertShader: "v", fragShader: "f" }} paused />);
+	expect(gl.calls).not.toContain("deleteProgram");
+
+	await render(<SimpleShaderCanvas args={{ vertShader: "v2", fragShader: "f" }} paused />);
+	expect(gl.calls).toContain("deleteProgram"); // old instance torn down
+
+	await unmount();
+});
+
 test("toggling paused does not recreate the instance", async () => {
 	await render(<SimpleShaderCanvas args={args} paused />);
 	const programsCreated = () => gl.calls.filter((c) => c === "deleteProgram").length;

@@ -10,7 +10,11 @@ const prefersReducedMotion = (): boolean =>
 	window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 export type SimpleShaderCanvasProps = {
-	/** Shader configuration. Memoize this — a new object reference recreates the instance. */
+	/**
+	 * Shader configuration. Changing `uniforms` is reconciled in place (no
+	 * teardown); changing `vertShader`/`fragShader`/`hooks`/`loadedClass`/
+	 * `autoStart` recreates the instance, so memoize those to keep them stable.
+	 */
 	args: ShaderArgs;
 	/** Pause the render loop without unmounting. Default false. */
 	paused?: boolean;
@@ -69,11 +73,21 @@ export const SimpleShaderCanvas = ({
 	// instead of an unusable canvas. WebGL support doesn't change within a
 	// session, so once unsupported we stay on the fallback.
 	const [unsupported, setUnsupported] = useState(false);
+	// Latest args, read inside the creation effect so it can see current uniforms
+	// without listing `args` as a dependency (which would recreate on any change).
+	const argsRef = useRef(args);
+	argsRef.current = args;
 
-	// Create the instance for the current canvas + args and tear it down on
-	// unmount or when `args` changes. This is the leak fix: the previous
-	// version never destroyed the instance, leaking a rAF loop + window/canvas
-	// listeners on every re-render (critical under Visual Editing re-renders).
+	// Create the instance and tear it down on unmount or when a *structural* part
+	// of `args` changes. Structural = anything that requires recompiling the
+	// program or rebinding listeners: the shader sources, hooks, and the
+	// loadedClass/autoStart options. Uniform-value changes are deliberately NOT
+	// here — they are reconciled in place by the effect below, so updating a
+	// uniform no longer churns the WebGL context (issue #6).
+	//
+	// This is also the leak fix: the previous version never destroyed the
+	// instance, leaking a rAF loop + window/canvas listeners on every re-render
+	// (critical under Visual Editing re-renders).
 	useEffect(() => {
 		const canvas = ref.current;
 		if (!canvas) return;
@@ -90,8 +104,10 @@ export const SimpleShaderCanvas = ({
 
 		let shader: Shader;
 		try {
+			// Read argsRef so the freshest uniforms are applied at creation without
+			// listing `args` in the deps (uniform changes reconcile in place below).
 			shader = new Shader(canvas, {
-				...args,
+				...argsRef.current,
 				autoStart: !reduce && !paused && !hidden,
 			});
 		} catch (error) {
@@ -116,10 +132,21 @@ export const SimpleShaderCanvas = ({
 			shader.destroy();
 			shaderRef.current = null;
 		};
-		// `paused` and the auto-pause observers are handled by the effect below so
-		// toggling them pauses in place instead of recreating the WebGL context.
+		// `paused` and the auto-pause observers are handled by a dedicated effect
+		// so toggling them pauses in place instead of recreating the WebGL
+		// context; `args.uniforms` is handled by the reconcile effect below for
+		// the same reason.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [args, respectReducedMotion]);
+	}, [args.vertShader, args.fragShader, args.loadedClass, args.autoStart, args.hooks, respectReducedMotion]);
+
+	// Reconcile uniform values in place. Runs on mount (after init, harmlessly
+	// re-applying the initial set) and whenever the `uniforms` array identity
+	// changes — without destroying or recompiling anything.
+	useEffect(() => {
+		const shader = shaderRef.current;
+		if (!shader || !args.uniforms) return;
+		shader.setUniforms(args.uniforms);
+	}, [args.uniforms]);
 
 	// Drive pause/resume from `paused` plus the opt-in offscreen / tab-hidden
 	// observers — all without recreating the instance. Effective paused state is
