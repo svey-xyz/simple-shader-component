@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useRef, type CanvasHTMLAttributes } from "react";
-import { Shader } from "../core";
+import { useEffect, useRef, useState, type CanvasHTMLAttributes, type ReactNode } from "react";
+import { Shader, WebGLUnavailableError } from "../core";
 import type { ShaderArgs } from "../types";
 
 const prefersReducedMotion = (): boolean =>
@@ -29,6 +29,19 @@ export type SimpleShaderCanvasProps = {
 	pauseWhenHidden?: boolean;
 	/** `rootMargin` for the offscreen `IntersectionObserver`. Default `'128px'`. */
 	offscreenRootMargin?: string;
+	/**
+	 * Called when the WebGL context can't be created (WebGL disabled, no GPU,
+	 * blocklisted driver, too many live contexts). Receives the underlying
+	 * error. Use it to log/report; the component renders `fallback` either way
+	 * and never throws.
+	 */
+	onUnsupported?: (error: Error) => void;
+	/**
+	 * Rendered in place of the canvas when WebGL is unavailable — e.g. a static
+	 * gradient or image. Falls back to `children` if not provided; if neither is
+	 * given, nothing is rendered (the page still doesn't crash).
+	 */
+	fallback?: ReactNode;
 } & CanvasHTMLAttributes<HTMLCanvasElement>;
 
 export const SimpleShaderCanvas = ({
@@ -38,6 +51,9 @@ export const SimpleShaderCanvas = ({
 	pauseWhenOffscreen = false,
 	pauseWhenHidden = false,
 	offscreenRootMargin = "128px",
+	onUnsupported,
+	fallback,
+	children,
 	className,
 	style,
 	...rest
@@ -49,6 +65,10 @@ export const SimpleShaderCanvas = ({
 	// drive the loop without triggering a React re-render.
 	const offscreenRef = useRef(false);
 	const hiddenRef = useRef(false);
+	// Flips to true when context creation fails so we render the fallback
+	// instead of an unusable canvas. WebGL support doesn't change within a
+	// session, so once unsupported we stay on the fallback.
+	const [unsupported, setUnsupported] = useState(false);
 
 	// Create the instance for the current canvas + args and tear it down on
 	// unmount or when `args` changes. This is the leak fix: the previous
@@ -68,10 +88,27 @@ export const SimpleShaderCanvas = ({
 			pauseWhenHidden && typeof document !== "undefined" && document.hidden;
 		hiddenRef.current = hidden;
 
-		const shader = new Shader(canvas, {
-			...args,
-			autoStart: !reduce && !paused && !hidden,
-		});
+		let shader: Shader;
+		try {
+			shader = new Shader(canvas, {
+				...args,
+				autoStart: !reduce && !paused && !hidden,
+			});
+		} catch (error) {
+			// WebGL couldn't be initialised. Degrade gracefully: warn, notify the
+			// consumer and render the fallback instead of crashing the page.
+			const err =
+				error instanceof Error ? error : new WebGLUnavailableError(String(error));
+			console.warn(
+				"[simple-shader-component] WebGL is unavailable; rendering fallback instead of a shader canvas.",
+				err,
+			);
+			setUnsupported(true);
+			onUnsupported?.(err);
+			return;
+		}
+
+		setUnsupported(false);
 		shaderRef.current = shader;
 		shader.init();
 
@@ -140,6 +177,10 @@ export const SimpleShaderCanvas = ({
 			}
 		};
 	}, [paused, pauseWhenOffscreen, pauseWhenHidden, offscreenRootMargin]);
+
+	if (unsupported) {
+		return <>{fallback ?? children ?? null}</>;
+	}
 
 	return (
 		<canvas

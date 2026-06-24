@@ -98,3 +98,41 @@ test("toggling paused does not recreate the instance", async () => {
 
 	await unmount();
 });
+
+test("renders fallback and calls onUnsupported when WebGL is unavailable (#9)", async () => {
+	gl = null as unknown as RecordingGl; // getContext now returns null
+
+	let received: Error | undefined;
+	await render(
+		<SimpleShaderCanvas
+			args={args}
+			paused
+			onUnsupported={(err) => (received = err)}
+			fallback={<div data-testid="fallback">no webgl</div>}
+		/>,
+	);
+
+	// No crash; fallback rendered instead of a canvas.
+	expect(host.querySelector("canvas")).toBeNull();
+	expect(host.querySelector('[data-testid="fallback"]')?.textContent).toBe("no webgl");
+	// Consumer notified with a real Error.
+	expect(received).toBeInstanceOf(Error);
+	expect(received?.name).toBe("WebGLUnavailableError");
+
+	await unmount();
+});
+
+test("falls back to children when no fallback prop is given (#9)", async () => {
+	gl = null as unknown as RecordingGl;
+
+	await render(
+		<SimpleShaderCanvas args={args} paused>
+			<div data-testid="child-fallback">static</div>
+		</SimpleShaderCanvas>,
+	);
+
+	expect(host.querySelector("canvas")).toBeNull();
+	expect(host.querySelector('[data-testid="child-fallback"]')?.textContent).toBe("static");
+
+	await unmount();
+});

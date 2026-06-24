@@ -81,6 +81,8 @@ export const Background = () => {
 | `pauseWhenOffscreen` | `boolean` | `false` | When `true`, an `IntersectionObserver` pauses the loop while the canvas is scrolled out of the viewport and resumes it on re-entry — no manual wiring, no GL context recreation. |
 | `pauseWhenHidden` | `boolean` | `false` | When `true`, the [Page Visibility API](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) pauses the loop while the tab/document is hidden and resumes it when visible again. |
 | `offscreenRootMargin` | `string` | `'128px'` | `rootMargin` for the `pauseWhenOffscreen` observer — grow it to start rendering slightly before the canvas enters the viewport. |
+| `onUnsupported` | `(error: Error) => void` | — | Called when WebGL can't be initialized (see [Graceful degradation](#graceful-degradation)). Receives a `WebGLUnavailableError`. |
+| `fallback` | `ReactNode` | — | Rendered in place of the canvas when WebGL is unavailable. Falls back to `children` if omitted. |
 
 These props are opt-in and default off, so existing behaviour is unchanged. They fold the common battery/CPU-saving pattern — a manual `IntersectionObserver` + `visibilitychange` listener driving `paused` — into the component. The effective paused state is `paused || (pauseWhenOffscreen && offscreen) || (pauseWhenHidden && hidden)`, and `respectReducedMotion` still wins (the loop stays stopped). Toggling any of them pauses in place via `startLoop()`/`stopLoop()` — the `Shader` instance and WebGL context are never recreated.
 
@@ -102,6 +104,33 @@ All other `<canvas>` attributes (`className`, `style`, `aria-hidden`, `id`, …)
 | `autoStart` | `boolean` | `true` | Start the render loop inside `init()`. Set `false` to render a single static frame and start the loop later via `shader.startLoop()`. |
 | `contextAttributes` | `WebGLContextAttributes` | — | Forwarded verbatim to `getContext('webgl', …)`. Controls `alpha`, `premultipliedAlpha` (see the [premultiplied-alpha contract](#what-it-gives-you-and-what-it-doesnt)), `antialias`, `preserveDrawingBuffer`, `depth`, `stencil`, `powerPreference`, etc. |
 | `maxPixelRatio` | `number` | `2` | Upper bound on `devicePixelRatio` when sizing the drawing buffer for HiDPI / retina output. The backing store is sized at `cssSize * min(devicePixelRatio, maxPixelRatio)`; the CSS display size is unchanged. Caps fill cost on very high-DPR phones. On 1× displays this is a no-op (identical to pre-fix behaviour). |
+
+## Graceful degradation
+WebGL isn't always available — it can be disabled, the device may have no usable GPU or a blocklisted driver, or too many contexts may already be live. When `getContext('webgl')` returns `null`, the component **does not crash**: it logs a warning, calls `onUnsupported(error)` and renders your `fallback` (or `children`) instead.
+
+```tsx
+<SimpleShaderCanvas
+	args={args}
+	onUnsupported={(err) => reportError(err)}
+	fallback={<div className="static-gradient" />}
+/>
+```
+
+Using the core `Shader` class directly? The constructor throws a typed `WebGLUnavailableError` (instead of an opaque `TypeError`), so you can catch it and render your own fallback:
+
+```ts
+import { Shader, WebGLUnavailableError } from '@svey-xyz/simple-shader-component'
+
+try {
+	new Shader(canvas, args).init()
+} catch (err) {
+	if (err instanceof WebGLUnavailableError) {
+		// show a static fallback
+	} else throw err
+}
+```
+
+The library first tries `getContext('webgl')`, then the legacy `experimental-webgl`, before giving up.
 
 ## Hooks
 Hooks attach logic to a lifecycle method. Pass them on construction (via `args.hooks`) or add them later with `shader.addHook(...)`.

@@ -1,6 +1,28 @@
 import { domHandler, MethodName } from "./domHandler";
 import ShaderTypes from "../types"
 
+/**
+ * Thrown when a WebGL rendering context cannot be created — i.e.
+ * `canvas.getContext('webgl')` (and the legacy `experimental-webgl`) both
+ * return `null`. This happens when WebGL is disabled, there is no usable GPU,
+ * the driver is blocklisted, or too many live contexts already exist.
+ *
+ * It replaces the opaque `TypeError: Cannot read properties of null` that the
+ * old non-null cast produced, giving consumers a typed, catchable failure they
+ * can recover from (e.g. render a static fallback).
+ */
+export class WebGLUnavailableError extends Error {
+	constructor(
+		message = "WebGL is unavailable: getContext('webgl') returned null. WebGL may be disabled, " +
+			"the device may lack a usable GPU or use a blocklisted driver, or too many contexts may be live.",
+	) {
+		super(message);
+		this.name = "WebGLUnavailableError";
+		// Keep `instanceof` working when this is down-levelled past ES2015.
+		Object.setPrototypeOf(this, WebGLUnavailableError.prototype);
+	}
+}
+
 /** Shader Class
  * @export
  * @class Shader
@@ -28,7 +50,15 @@ export class Shader extends domHandler {
 		// an opaque canvas (`alpha: false`), straight alpha
 		// (`premultipliedAlpha: false`), `preserveDrawingBuffer`, etc. See
 		// ShaderArgs.contextAttributes for the full contract.
-		this.gl = container.getContext('webgl', args.contextAttributes) as WebGLRenderingContext;
+		//
+		// getContext() returns null when WebGL can't be initialised. Try the
+		// legacy 'experimental-webgl' id before giving up (older/edge browsers),
+		// then fail with a typed, catchable error instead of letting the next
+		// `this.gl.*` call blow up with an opaque null-dereference TypeError.
+		const gl = (container.getContext('webgl', args.contextAttributes) ??
+			container.getContext('experimental-webgl' as 'webgl', args.contextAttributes)) as WebGLRenderingContext | null;
+		if (!gl) throw new WebGLUnavailableError();
+		this.gl = gl;
 		this.shaderProgram = this.initializeShader(args.vertShader, args.fragShader);
 		this.vertexBuffer = this.initBuffers();
 
