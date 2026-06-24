@@ -18,7 +18,15 @@ export class Shader extends domHandler {
 
 	constructor(container: HTMLCanvasElement, args: ShaderTypes.ShaderArgs) {
 		super(container);
-		this.gl = container.getContext('webgl') as WebGLRenderingContext;
+		// The WebGL1 context is composited over the page with premultiplied
+		// alpha (the browser default, i.e. `premultipliedAlpha: true`). Fragment
+		// shaders must therefore write premultiplied colors to `gl_FragColor`
+		// (rgb already multiplied by a); straight alpha causes light fringing.
+		// `args.contextAttributes` is forwarded verbatim so callers can opt into
+		// an opaque canvas (`alpha: false`), straight alpha
+		// (`premultipliedAlpha: false`), `preserveDrawingBuffer`, etc. See
+		// ShaderArgs.contextAttributes for the full contract.
+		this.gl = container.getContext('webgl', args.contextAttributes) as WebGLRenderingContext;
 		this.shaderProgram = this.initializeShader(args.vertShader, args.fragShader);
 		this.vertexBuffer = this.initBuffers();
 

@@ -18,7 +18,30 @@ export type ShaderArgs = {
 	/** Default 'loaded' */
 	loadedClass?: string,
 	/** Start the render loop automatically inside init(). Default true. */
-	autoStart?: boolean
+	autoStart?: boolean,
+	/**
+	 * Attributes forwarded verbatim to `canvas.getContext('webgl', contextAttributes)`.
+	 *
+	 * Output contract: the canvas is composited over the page using
+	 * **premultiplied alpha** (`premultipliedAlpha: true`, the browser default).
+	 * The color your fragment shader writes to `gl_FragColor` **must already be
+	 * premultiplied** — i.e. multiply `rgb` by `a` yourself. Emitting
+	 * straight (non-premultiplied) alpha produces light fringing where the
+	 * canvas overlaps page content. Pass `premultipliedAlpha: false` if you'd
+	 * rather output straight alpha instead.
+	 *
+	 * Relevant options:
+	 * - `alpha` (default `true`) — set `false` for an opaque canvas (the shader
+	 *   composites over an opaque black backdrop; cheaper and avoids any
+	 *   premultiplied-alpha concerns).
+	 * - `premultipliedAlpha` (default `true`) — see the output contract above.
+	 * - `antialias` (default `true`) — multisample the drawing buffer.
+	 * - `preserveDrawingBuffer` (default `false`) — keep the buffer between
+	 *   frames; needed if you read it back (e.g. `toDataURL`/`readPixels`).
+	 * - `depth`, `stencil`, `powerPreference`, `failIfMajorPerformanceCaveat`,
+	 *   `desynchronized` — see {@link WebGLContextAttributes}.
+	 */
+	contextAttributes?: WebGLContextAttributes
 }
 
 export type UniformValue = {

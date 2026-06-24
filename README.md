@@ -19,7 +19,8 @@ This package is a platform for you to display your own shaders. It deliberately 
 
 The GLSL contract:
 
-- **WebGL1 / GLSL ES 1.00.** The context is created with `getContext('webgl')`.
+- **WebGL1 / GLSL ES 1.00.** The context is created with `getContext('webgl')`. Pass `args.contextAttributes` (`WebGLContextAttributes`) to customize it — `alpha`, `premultipliedAlpha`, `antialias`, `preserveDrawingBuffer`, etc.
+- **Premultiplied-alpha output.** The canvas is composited over the page with premultiplied alpha (the browser default). Your fragment shader must write **premultiplied** color to `gl_FragColor` — multiply `rgb` by `a` yourself — or you'll see light fringing where the canvas overlaps page content. Want straight alpha instead? Pass `contextAttributes: { premultipliedAlpha: false }`. Want an opaque canvas? Pass `contextAttributes: { alpha: false }`.
 - The vertex shader **must** declare the attribute `attribute vec2 a_position;` — geometry is a hardcoded full-screen quad (two triangles in clip space). No other attributes are provided.
 - There are **no automatic uniforms.** Common ones like `u_time` and `u_resolution` are *not* injected — declare them in your shader and update them from hooks (see below). `u_time` is typically driven from a `LOOP` hook via `shader.getElapsedTime()`; `u_resolution` from a `RESIZE` hook.
 
@@ -99,6 +100,7 @@ All other `<canvas>` attributes (`className`, `style`, `aria-hidden`, `id`, …)
 | `hooks` | `{ methodName, hook }[]` | — | Lifecycle hooks (see below). |
 | `loadedClass` | `string` | `'loaded'` | Class added to the canvas once initialized. |
 | `autoStart` | `boolean` | `true` | Start the render loop inside `init()`. Set `false` to render a single static frame and start the loop later via `shader.startLoop()`. |
+| `contextAttributes` | `WebGLContextAttributes` | — | Forwarded verbatim to `getContext('webgl', …)`. Controls `alpha`, `premultipliedAlpha` (see the [premultiplied-alpha contract](#what-it-gives-you-and-what-it-doesnt)), `antialias`, `preserveDrawingBuffer`, `depth`, `stencil`, `powerPreference`, etc. |
 
 ## Hooks
 Hooks attach logic to a lifecycle method. Pass them on construction (via `args.hooks`) or add them later with `shader.addHook(...)`.
