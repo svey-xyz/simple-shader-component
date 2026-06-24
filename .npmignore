@@ -8,3 +8,4 @@ types/
 jest.config.ts
 jest.setup.ts
 tsconfig.json
+playground

@@ -10,7 +10,6 @@ on:
 permissions:
   id-token: write # npm trusted publishing (OIDC)
   contents: write # tag + GitHub release
-  packages: write # GitHub Packages
 
 concurrency:
   group: publish
@@ -62,14 +61,6 @@ jobs:
       - name: Publish to npm
         if: steps.version.outputs.changed == 'true'
         run: npm publish
-
-      - name: Publish to GitHub Packages
-        if: steps.version.outputs.changed == 'true'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "@${{ github.repository_owner }}:registry=https://npm.pkg.github.com" >> ~/.npmrc
-          npm publish --registry=https://npm.pkg.github.com
 
       - name: Create GitHub release
         if: steps.version.outputs.changed == 'true'

@@ -12,6 +12,7 @@
   "version": "1.2.4",
   "license": "GPL-3.0",
   "type": "module",
+  "sideEffects": false,
   "main": "dist/core/index.cjs",
   "module": "dist/core/index.js",
   "types": "dist/core/index.d.ts",

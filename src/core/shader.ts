@@ -1,6 +1,28 @@
 import { domHandler, MethodName } from "./domHandler";
 import ShaderTypes from "../types"
 
+/**
+ * Thrown when a WebGL rendering context cannot be created — i.e.
+ * `canvas.getContext('webgl')` (and the legacy `experimental-webgl`) both
+ * return `null`. This happens when WebGL is disabled, there is no usable GPU,
+ * the driver is blocklisted, or too many live contexts already exist.
+ *
+ * It replaces the opaque `TypeError: Cannot read properties of null` that the
+ * old non-null cast produced, giving consumers a typed, catchable failure they
+ * can recover from (e.g. render a static fallback).
+ */
+export class WebGLUnavailableError extends Error {
+	constructor(
+		message = "WebGL is unavailable: getContext('webgl') returned null. WebGL may be disabled, " +
+			"the device may lack a usable GPU or use a blocklisted driver, or too many contexts may be live.",
+	) {
+		super(message);
+		this.name = "WebGLUnavailableError";
+		// Keep `instanceof` working when this is down-levelled past ES2015.
+		Object.setPrototypeOf(this, WebGLUnavailableError.prototype);
+	}
+}
+
 /** Shader Class
  * @export
  * @class Shader
@@ -9,25 +31,64 @@ import ShaderTypes from "../types"
  */
 export class Shader extends domHandler {
 	private hooks: Record<string, ShaderTypes.ShaderHook[]> = {};
-	private gl: WebGLRenderingContext;
+	private gl: WebGLRenderingContext | WebGL2RenderingContext;
 	private shaderProgram: WebGLProgram;
 	private vertexBuffer: WebGLBuffer;
 	private uniforms: Array<ShaderTypes.UniformValue> | undefined
 	private loadedClass: string = 'loaded'
 	private autoStart: boolean = true
+	/** Cap on devicePixelRatio used when sizing the drawing buffer. See ShaderArgs. */
+	private maxPixelRatio: number = 2
 
 	constructor(container: HTMLCanvasElement, args: ShaderTypes.ShaderArgs) {
 		super(container);
-		this.gl = container.getContext('webgl') as WebGLRenderingContext;
+		// Acquire the WebGL context. `args.contextAttributes` is forwarded
+		// verbatim (premultiplied-alpha output contract — see
+		// ShaderArgs.contextAttributes); `args.webgl2` opts into WebGL2 / GLSL
+		// ES 3.00 with a WebGL1 fallback. A typed WebGLUnavailableError is
+		// thrown if no context can be created, instead of an opaque
+		// null-dereference on the next `this.gl.*` call.
+		this.gl = this.createContext(container, args.webgl2 === true, args.contextAttributes);
 		this.shaderProgram = this.initializeShader(args.vertShader, args.fragShader);
 		this.vertexBuffer = this.initBuffers();
 
 		if (args.uniforms) this.uniforms = args.uniforms
 		if (args.loadedClass) this.loadedClass = args.loadedClass
 		if (args.autoStart === false) this.autoStart = false
+		if (typeof args.maxPixelRatio === 'number') this.maxPixelRatio = args.maxPixelRatio
 		if (args.hooks) args.hooks.forEach((hook) => {
 			this.addHook(hook.methodName, hook.hook)
 		})
+	}
+
+	/**
+	 * Acquire the rendering context.
+	 *
+	 * - When `webgl2` is requested we try `getContext('webgl2')` (GLSL ES 3.00)
+	 *   first and fall back to `getContext('webgl')` (GLSL ES 1.00) when WebGL2
+	 *   is unavailable, so a WebGL1 shader still renders everywhere. The default
+	 *   path is plain `getContext('webgl')`.
+	 * - The legacy `experimental-webgl` id is tried before giving up, for
+	 *   older / edge browsers.
+	 * - `contextAttributes` is forwarded verbatim to every `getContext` call
+	 *   (alpha / premultipliedAlpha / antialias / preserveDrawingBuffer / …).
+	 * - If nothing can be acquired we throw a typed, catchable
+	 *   {@link WebGLUnavailableError} instead of returning null and letting a
+	 *   later `this.gl.*` call blow up with an opaque TypeError.
+	 */
+	private createContext(
+		container: HTMLCanvasElement,
+		webgl2: boolean,
+		contextAttributes?: WebGLContextAttributes,
+	): WebGLRenderingContext | WebGL2RenderingContext {
+		const get = (id: 'webgl2' | 'webgl' | 'experimental-webgl') =>
+			container.getContext(id as 'webgl', contextAttributes) as
+				| WebGLRenderingContext
+				| WebGL2RenderingContext
+				| null;
+		const gl = (webgl2 ? get('webgl2') : null) ?? get('webgl') ?? get('experimental-webgl');
+		if (!gl) throw new WebGLUnavailableError();
+		return gl;
 	}
 
 	public init() {
@@ -78,7 +139,7 @@ export class Shader extends domHandler {
 		return vertexBuffer;
 	}
 
-	private loadShader(gl: WebGLRenderingContext, type: GLenum, source: string = ''): WebGLShader | null {
+	private loadShader(gl: WebGLRenderingContext | WebGL2RenderingContext, type: GLenum, source: string = ''): WebGLShader | null {
 		const shader = gl.createShader(type);
 		if (!shader) return null;
 
@@ -150,6 +211,17 @@ export class Shader extends domHandler {
 		return this.gl.getUniform(this.shaderProgram, uLoc)
 	}
 
+	/**
+	 * Reconcile the full uniform set in place: cache it and write every value to
+	 * the program via `setUniform`. This is the cheap path the React wrapper uses
+	 * when only uniform values change — no program recompile or context teardown.
+	 */
+	public setUniforms(uniforms: Array<ShaderTypes.UniformValue>): void {
+		if (this.isDestroyed) return;
+		this.uniforms = uniforms;
+		uniforms.forEach((uniform) => this.setUniform(uniform));
+	}
+
 	/**  Sets a uniform value for the shader */
 	public setUniform(uniform: ShaderTypes.UniformValue): void {
 		if (this.isDestroyed) return;
@@ -212,12 +284,45 @@ export class Shader extends domHandler {
 		if (this.isDestroyed) return;
 		super.resize(e);
 		const { width, height } = this.container.getBoundingClientRect();
-		this.container.width = width;
-		this.container.height = height;
-		this.gl.viewport(0, 0, width, height);
+
+		// Size the drawing buffer in *physical* pixels so output is crisp on
+		// HiDPI / retina displays. getBoundingClientRect() reports the CSS
+		// (logical) box; multiplying by the (capped) devicePixelRatio gives the
+		// backing-store resolution. The CSS box stays at logical size via the
+		// consumer's styling, and because both dimensions scale by the same
+		// factor the displayed size is unchanged — just sampled at full
+		// resolution. The cap bounds fill cost on very high-DPR phones. On 1x
+		// displays dpr === 1, so this is behaviourally identical to before.
+		const dpr = Math.min(this.pixelRatio(), this.maxPixelRatio);
+		this.container.width = Math.max(1, Math.round(width * dpr));
+		this.container.height = Math.max(1, Math.round(height * dpr));
+
+		this.gl.viewport(0, 0, this.container.width, this.container.height);
+
+		// Keep u_resolution (if the shader declares it) in sync with the
+		// physical pixel size so gl_FragCoord-based maths stays correct.
+		this.updateResolutionUniform();
+
 		this.runHooks(MethodName.RESIZE);
 
 		this.render(); // Render immediately on resize to avoid jitter waiting for render call
+	}
+
+	/** Current devicePixelRatio, guarded for SSR / non-DOM environments. */
+	private pixelRatio(): number {
+		return (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+	}
+
+	/**
+	 * Writes the physical-pixel resolution into a `u_resolution` vec2 uniform if
+	 * — and only if — the active program declares one. Shaders without it are
+	 * left untouched (no console noise), keeping this backward compatible.
+	 */
+	private updateResolutionUniform(): void {
+		const uLoc = this.gl.getUniformLocation(this.shaderProgram, 'u_resolution');
+		if (!uLoc) return;
+		this.gl.useProgram(this.shaderProgram);
+		this.gl.uniform2fv(uLoc, new Float32Array([this.container.width, this.container.height]));
 	}
 
 	// Handles input events
