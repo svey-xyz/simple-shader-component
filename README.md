@@ -77,6 +77,8 @@ export const Background = () => {
 | `args` | `ShaderArgs` | — | Shader configuration (see below). **Memoize it** — a new reference tears down and recreates the instance. |
 | `paused` | `boolean` | `false` | Pause/resume the render loop **without unmounting**. Toggling it does not recreate the WebGL context. Useful for pausing offscreen or on tab-hidden. |
 | `respectReducedMotion` | `boolean` | `false` | When `true`, the loop won't auto-start if the user has `prefers-reduced-motion: reduce` (a single static frame is still rendered). |
+| `onUnsupported` | `(error: Error) => void` | — | Called when WebGL can't be initialized (see [Graceful degradation](#graceful-degradation)). Receives a `WebGLUnavailableError`. |
+| `fallback` | `ReactNode` | — | Rendered in place of the canvas when WebGL is unavailable. Falls back to `children` if omitted. |
 
 All other `<canvas>` attributes (`className`, `style`, `aria-hidden`, `id`, …) are forwarded to the canvas. The canvas defaults to `width: 100%` and `aria-hidden` (it's decorative); pass `aria-hidden={false}` to override. The component is unstyled beyond that — size it with your own CSS.
 
@@ -89,6 +91,33 @@ All other `<canvas>` attributes (`className`, `style`, `aria-hidden`, `id`, …)
 | `hooks` | `{ methodName, hook }[]` | — | Lifecycle hooks (see below). |
 | `loadedClass` | `string` | `'loaded'` | Class added to the canvas once initialized. |
 | `autoStart` | `boolean` | `true` | Start the render loop inside `init()`. Set `false` to render a single static frame and start the loop later via `shader.startLoop()`. |
+
+## Graceful degradation
+WebGL isn't always available — it can be disabled, the device may have no usable GPU or a blocklisted driver, or too many contexts may already be live. When `getContext('webgl')` returns `null`, the component **does not crash**: it logs a warning, calls `onUnsupported(error)` and renders your `fallback` (or `children`) instead.
+
+```tsx
+<SimpleShaderCanvas
+	args={args}
+	onUnsupported={(err) => reportError(err)}
+	fallback={<div className="static-gradient" />}
+/>
+```
+
+Using the core `Shader` class directly? The constructor throws a typed `WebGLUnavailableError` (instead of an opaque `TypeError`), so you can catch it and render your own fallback:
+
+```ts
+import { Shader, WebGLUnavailableError } from '@svey-xyz/simple-shader-component'
+
+try {
+	new Shader(canvas, args).init()
+} catch (err) {
+	if (err instanceof WebGLUnavailableError) {
+		// show a static fallback
+	} else throw err
+}
+```
+
+The library first tries `getContext('webgl')`, then the legacy `experimental-webgl`, before giving up.
 
 ## Hooks
 Hooks attach logic to a lifecycle method. Pass them on construction (via `args.hooks`) or add them later with `shader.addHook(...)`.
