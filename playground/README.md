@@ -7,7 +7,7 @@ fix to a control:
 | Control | Fix |
 | --- | --- |
 | pause / pauseWhenOffscreen / pauseWhenHidden / respectReducedMotion | #5 auto-pause |
-| `u_color` colour picker (reconciled in place — watch the "instances created" counter stay put) | #6 uniforms without teardown |
+| Uniform manager — **+ Add** (name + type), per-type value editors, **×** remove (reconciled in place — watch the "instances created" counter stay put) | #6 uniforms without teardown |
 | alpha / premultipliedAlpha toggles | #7 contextAttributes |
 | maxPixelRatio slider + live backing-store readout + automatic `u_resolution` | #8 HiDPI / devicePixelRatio |
 | "Force WebGL unavailable" → `onUnsupported` + `fallback` | #9 graceful degradation |
