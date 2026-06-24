@@ -24,6 +24,11 @@ export class domHandler {
 	private inputHandler: (e: Event) => void;
 	private resizeHandler: (e: Event) => void;
 	private debouncedResize: (e: Event) => void;
+	// Active devicePixelRatio media query + its listener, so a DPR change
+	// (e.g. dragging the window between a retina and a non-retina monitor)
+	// re-runs resize even on browsers that don't fire a window 'resize' for it.
+	private dprQuery: MediaQueryList | null = null;
+	private dprListener: (() => void) | null = null;
 
 	// Clock properties
 	private startTime: number = 0; // Time when the clock starts
@@ -47,6 +52,7 @@ export class domHandler {
 			this.container.addEventListener(event, this.inputHandler, { passive: true });
 		}
 		window.addEventListener('resize', this.debouncedResize, { passive: true });
+		this.addDprListener();
 	}
 
 	private removeListeners(): void {
@@ -54,6 +60,36 @@ export class domHandler {
 			this.container.removeEventListener(event, this.inputHandler);
 		}
 		window.removeEventListener('resize', this.debouncedResize);
+		this.removeDprListener();
+	}
+
+	/**
+	 * Arms a `(resolution: <dpr>dppx)` media query that fires when the device
+	 * pixel ratio changes. A matchMedia resolution query only matches at one
+	 * exact ratio, so on each change we resize and re-arm against the new ratio.
+	 * No-ops where matchMedia is unavailable (SSR / older environments).
+	 */
+	private addDprListener(): void {
+		if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+		this.removeDprListener();
+		const dpr = window.devicePixelRatio || 1;
+		const query = window.matchMedia(`(resolution: ${dpr}dppx)`);
+		const listener = () => {
+			// DPR changed — resize the backing store, then re-arm for the next change.
+			this.debouncedResize(new Event('resize'));
+			this.addDprListener();
+		};
+		query.addEventListener?.('change', listener);
+		this.dprQuery = query;
+		this.dprListener = listener;
+	}
+
+	private removeDprListener(): void {
+		if (this.dprQuery && this.dprListener) {
+			this.dprQuery.removeEventListener?.('change', this.dprListener);
+		}
+		this.dprQuery = null;
+		this.dprListener = null;
 	}
 
 	// Start the clock

@@ -15,6 +15,8 @@ export class Shader extends domHandler {
 	private uniforms: Array<ShaderTypes.UniformValue> | undefined
 	private loadedClass: string = 'loaded'
 	private autoStart: boolean = true
+	/** Cap on devicePixelRatio used when sizing the drawing buffer. See ShaderArgs. */
+	private maxPixelRatio: number = 2
 
 	constructor(container: HTMLCanvasElement, args: ShaderTypes.ShaderArgs) {
 		super(container);
@@ -25,6 +27,7 @@ export class Shader extends domHandler {
 		if (args.uniforms) this.uniforms = args.uniforms
 		if (args.loadedClass) this.loadedClass = args.loadedClass
 		if (args.autoStart === false) this.autoStart = false
+		if (typeof args.maxPixelRatio === 'number') this.maxPixelRatio = args.maxPixelRatio
 		if (args.hooks) args.hooks.forEach((hook) => {
 			this.addHook(hook.methodName, hook.hook)
 		})
@@ -212,12 +215,45 @@ export class Shader extends domHandler {
 		if (this.isDestroyed) return;
 		super.resize(e);
 		const { width, height } = this.container.getBoundingClientRect();
-		this.container.width = width;
-		this.container.height = height;
-		this.gl.viewport(0, 0, width, height);
+
+		// Size the drawing buffer in *physical* pixels so output is crisp on
+		// HiDPI / retina displays. getBoundingClientRect() reports the CSS
+		// (logical) box; multiplying by the (capped) devicePixelRatio gives the
+		// backing-store resolution. The CSS box stays at logical size via the
+		// consumer's styling, and because both dimensions scale by the same
+		// factor the displayed size is unchanged — just sampled at full
+		// resolution. The cap bounds fill cost on very high-DPR phones. On 1x
+		// displays dpr === 1, so this is behaviourally identical to before.
+		const dpr = Math.min(this.pixelRatio(), this.maxPixelRatio);
+		this.container.width = Math.max(1, Math.round(width * dpr));
+		this.container.height = Math.max(1, Math.round(height * dpr));
+
+		this.gl.viewport(0, 0, this.container.width, this.container.height);
+
+		// Keep u_resolution (if the shader declares it) in sync with the
+		// physical pixel size so gl_FragCoord-based maths stays correct.
+		this.updateResolutionUniform();
+
 		this.runHooks(MethodName.RESIZE);
 
 		this.render(); // Render immediately on resize to avoid jitter waiting for render call
+	}
+
+	/** Current devicePixelRatio, guarded for SSR / non-DOM environments. */
+	private pixelRatio(): number {
+		return (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+	}
+
+	/**
+	 * Writes the physical-pixel resolution into a `u_resolution` vec2 uniform if
+	 * — and only if — the active program declares one. Shaders without it are
+	 * left untouched (no console noise), keeping this backward compatible.
+	 */
+	private updateResolutionUniform(): void {
+		const uLoc = this.gl.getUniformLocation(this.shaderProgram, 'u_resolution');
+		if (!uLoc) return;
+		this.gl.useProgram(this.shaderProgram);
+		this.gl.uniform2fv(uLoc, new Float32Array([this.container.width, this.container.height]));
 	}
 
 	// Handles input events
