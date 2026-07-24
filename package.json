@@ -12,6 +12,9 @@
   "version": "1.3.1",
   "license": "GPL-3.0",
   "type": "module",
+  "sideEffects": [
+    "./src/**/*"
+  ],
   "main": "dist/core/index.cjs",
   "module": "dist/core/index.js",
   "types": "dist/core/index.d.ts",
