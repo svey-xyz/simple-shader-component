@@ -105,3 +105,22 @@ test("package.json exports map points its runtime conditions at real files", () 
 		}
 	}
 });
+
+test("sideEffects is a scoped array that never covers shipped dist/ files", () => {
+	// Regression guard for the 1.3.0 → 1.3.1 sideEffects saga (#11):
+	//   - `"sideEffects": false` makes Bun.build treat its OWN src modules as
+	//     prunable under minify, which tree-shakes the `MethodName` enum object
+	//     and drops the `domHandler` re-export alias → dangling ESM exports.
+	//   - Omitting the field entirely forfeits consumer tree-shaking.
+	// The fix is a scoped array marking only `src/**` as side-effectful: Bun's
+	// bundler then leaves its own sources alone, while the published `dist/`
+	// files (the only ones consumers resolve — see `files`) stay side-effect-free
+	// and fully tree-shakeable. This test pins that shape so neither `false` nor
+	// a dist-covering pattern sneaks back in.
+	const pkg = require(new URL("package.json", ROOT).pathname);
+	expect(Array.isArray(pkg.sideEffects), "sideEffects must be a scoped array, never `false`").toBe(true);
+	for (const pattern of pkg.sideEffects as string[]) {
+		expect(pattern.includes("dist"), `sideEffects pattern "${pattern}" must not cover dist/`).toBe(false);
+		expect(pattern.startsWith("./src/") || pattern.startsWith("src/"), `sideEffects pattern "${pattern}" should scope to src/`).toBe(true);
+	}
+});
