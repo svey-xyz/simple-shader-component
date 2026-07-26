@@ -1,1 +1,20 @@
-ewoJImNvbXBpbGVyT3B0aW9ucyI6IHsKCQkib3V0RGlyIjogImRpc3QiLAoJCSJyb290RGlyIjogInNyYyIsCgkJImVtaXREZWNsYXJhdGlvbk9ubHkiOiB0cnVlLAoJCSJkZWNsYXJhdGlvbiI6IHRydWUsCgkJInRhcmdldCI6ICJlc25leHQiLAoJCSJtb2R1bGUiOiAiZXNuZXh0IiwKCQkibW9kdWxlUmVzb2x1dGlvbiI6ICJCdW5kbGVyIiwKCQkic3RyaWN0IjogdHJ1ZSwKCQkiZXNNb2R1bGVJbnRlcm9wIjogdHJ1ZSwKCQkianN4IjogInJlYWN0LWpzeCIsCgkJInNvdXJjZU1hcCI6IHRydWUsCgkJImFsbG93SnMiOiBmYWxzZSwKCQkic2tpcExpYkNoZWNrIjogdHJ1ZQoJfSwKCSJpbmNsdWRlIjogWyAic3JjLyoqLyoiIF0sCgkiZXhjbHVkZSI6IFsgIm5vZGVfbW9kdWxlcyIsICJkaXN0IiBdLAoJInR5cGVzIjogWyAibm9kZSIgXQp9
+{
+	"compilerOptions": {
+		"outDir": "dist",
+		"rootDir": "src",
+		"emitDeclarationOnly": true,
+		"declaration": true,
+		"target": "esnext",
+		"module": "esnext",
+		"moduleResolution": "Bundler",
+		"strict": true,
+		"esModuleInterop": true,
+		"jsx": "react-jsx",
+		"sourceMap": true,
+		"allowJs": false,
+		"skipLibCheck": true
+	},
+	"include": [ "src/**/*" ],
+	"exclude": [ "node_modules", "dist" ],
+	"types": [ "node" ]
+}
